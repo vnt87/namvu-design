@@ -570,7 +570,7 @@ describe('buildPackagedDaemonSpawnEnv', () => {
     );
   });
 
-  it('forwards the packaged telemetry relay URL to the daemon when configured', () => {
+  it('ignores legacy packaged telemetry relay configuration', () => {
     const env = buildPackagedDaemonSpawnEnv(fakePaths(), {
       appVersion: null,
       daemonCliEntry: null,
@@ -578,9 +578,7 @@ describe('buildPackagedDaemonSpawnEnv', () => {
       requireDesktopAuth: true,
       telemetryRelayUrl: 'https://telemetry.open-design.ai/api/langfuse',
     });
-    expect(env.OPEN_DESIGN_TELEMETRY_RELAY_URL).toBe(
-      'https://telemetry.open-design.ai/api/langfuse',
-    );
+    expect(env.OPEN_DESIGN_TELEMETRY_RELAY_URL).toBeUndefined();
   });
 
   it('forwards the packaged AMR profile to the daemon when configured', () => {
@@ -712,7 +710,7 @@ describe('buildPackagedDaemonSpawnEnv', () => {
     expect('OD_VELA_WEB_URL' in env).toBe(false);
   });
 
-  it('forwards POSTHOG_KEY/POSTHOG_HOST to the daemon spawn env when baked into the bundle', () => {
+  it('ignores legacy PostHog values baked into older bundles', () => {
     const env = buildPackagedDaemonSpawnEnv(fakePaths(), {
       appVersion: null,
       daemonCliEntry: null,
@@ -721,8 +719,8 @@ describe('buildPackagedDaemonSpawnEnv', () => {
       posthogKey: 'phc_packaged_test',
       posthogHost: 'https://us.i.posthog.com',
     });
-    expect(env.POSTHOG_KEY).toBe('phc_packaged_test');
-    expect(env.POSTHOG_HOST).toBe('https://us.i.posthog.com');
+    expect(env.POSTHOG_KEY).toBeUndefined();
+    expect(env.POSTHOG_HOST).toBeUndefined();
   });
 
   it('omits POSTHOG_KEY/POSTHOG_HOST for fork builds that lack the secret', () => {

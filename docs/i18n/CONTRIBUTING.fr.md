@@ -439,12 +439,10 @@ Pour garder le projet focalisé, merci de ne pas ouvrir de PR qui :
 - **Remplace le daemon par une fonction serverless.** Le rôle du daemon est de
   posséder un vrai `cwd` et de spawn une vraie CLI. Déployer la SPA sur Vercel
   est très bien ; le daemon reste un daemon.
-- **Ajoute de la télémétrie ou une collecte externe hors du contrat de
-  confidentialité.** Les analytics produit et le replay de session masqué sont
-  soumis au consentement ; la télémétrie nettoyée de sécurité/fiabilité reste
-  active dans les builds configurés. Tout nouvel événement, champ ou
-  destinataire doit respecter les limites de consentement, minimisation et
-  nettoyage décrites dans [`PRIVACY.md`](../../PRIVACY.md).
+- **Ajoute de la télémétrie ou une collecte externe.** L'application n'envoie
+  ni analytics produit, ni replay de session, ni traces de qualité, ni rapports
+  de plantage. Seules des statistiques d'usage élémentaires conservées en local
+  sont acceptées, conformément à [`PRIVACY.md`](../../PRIVACY.md).
 - **Bundle un binaire** sans fichier de licence ni attribution d'auteur à côté.
 
 Si vous n'êtes pas sûr que votre idée rentre dans le projet, ouvrez une

@@ -346,6 +346,7 @@ export async function captureStartupFailure(
   },
   deps: CaptureDeps = {},
 ): Promise<void> {
+  if (packagedTelemetryDisabled()) return;
   const key = args.posthogKey?.trim();
   if (!key) return; // fork builds / no key → no-op, zero network
   const host = (args.posthogHost?.trim() || DEFAULT_HOST).replace(/\/+$/, "");
@@ -423,9 +424,12 @@ export interface ReportDeps extends CaptureDeps {
 // classify → read log tail → parse error code → scrub → capture. Wrapped so it
 // can NEVER become a new startup-failure source.
 export async function reportStartupFailure(
-  args: ReportStartupFailureArgs,
-  deps: ReportDeps = {},
+  _args: ReportStartupFailureArgs,
+  _deps: ReportDeps = {},
 ): Promise<void> {
+  if (packagedTelemetryDisabled()) return;
+  const args = _args;
+  const deps = _deps;
   try {
     const classification = classifyStartupFailure(args.error, args.isPathAccess);
     let errorCode: string | undefined;
@@ -520,4 +524,8 @@ export async function reportStartupFailure(
   } catch {
     // Reporting a startup failure must NEVER itself break the exit path.
   }
+}
+
+function packagedTelemetryDisabled(): boolean {
+  return true;
 }

@@ -681,24 +681,13 @@ function filterAllowedKeys(obj: Record<string, unknown>): AppConfigPrefs {
   return normalizeRetiredAgentPrefs(normalizeAgentCliEnvPrefs(result as AppConfigPrefs));
 }
 
-// Fill in telemetry defaults when the saved config has no `telemetry`
-// field at all (fresh install, pre-disclosure). `metrics` / `content`
-// default to true so onboarding-funnel events emit from the first
-// render — without these defaults the gate at
-// `analytics.ts` (`if (cfg.telemetry?.metrics !== true) return`)
-// dropped every event a user fired before the post-onboarding
-// disclosure modal had a chance to set them. An EXPLICIT `false`
-// the user previously saved is preserved (only `undefined` gets
-// the new default), so opt-out users stay opted out across the
-// 0.7.x → 0.8.0 upgrade.
+// Telemetry is permanently disabled. Keep the legacy preference shape only
+// for backwards-compatible config reads while every channel remains off.
 function applyTelemetryDefaults(prefs: AppConfigPrefs): AppConfigPrefs {
-  if (prefs.telemetry === undefined) {
-    return {
-      ...prefs,
-      telemetry: { metrics: true, content: true },
-    };
-  }
-  return prefs;
+  return {
+    ...prefs,
+    telemetry: { metrics: false, content: false, artifactManifest: false },
+  };
 }
 
 export async function readAppConfig(dataDir: string): Promise<AppConfigPrefs> {

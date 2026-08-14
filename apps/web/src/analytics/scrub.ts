@@ -8,7 +8,11 @@
 // single function is easier to audit and harder to forget when a new
 // sensitive surface ships.
 
-import type { CaptureResult } from 'posthog-js';
+export interface CaptureResult {
+  event: string;
+  properties: Record<string, unknown>;
+  [key: string]: unknown;
+}
 
 // Tags whose text content can carry user-typed values. PostHog autocapture
 // does not capture input/textarea `value` properties by default, but it
@@ -56,7 +60,7 @@ function scrubUrl(url: unknown): unknown {
 }
 
 // Rewrite absolute filesystem paths in exception stack traces. Packaged
-// builds expose `file:///Applications/Open Design.app/Contents/Resources/…`
+// builds expose `file:///Applications/NamVu Design.app/Contents/Resources/…`
 // which leaks both the install root and the user's home dir in homebrew /
 // custom installs. Reduce to the repo-relative tail.
 //
@@ -69,7 +73,7 @@ export function scrubFilePath(value: unknown): unknown {
   //
   // The prefix uses `[^()\n]*?` (non-greedy, no parens/newlines) so paths
   // that contain spaces — most notably the packaged macOS layout
-  // `/Applications/Open Design.app/Contents/Resources/...` — get fully
+  // `/Applications/NamVu Design.app/Contents/Resources/...` — get fully
   // rewritten instead of partially leaking the install directory. The
   // tail stops at whitespace or a closing paren so stack frames of shape
   // `at fn (file:///.../foo.tsx:1:2)` lose only the path portion.

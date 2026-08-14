@@ -512,7 +512,7 @@ export function RecentProjectsStrip({
       return { name, initial, ownedBySelf: true };
     }
     const name = resolveMember(ownerMemberId)?.displayName ?? t('recentProjects.teamMemberCreator');
-    const initial = (Array.from(name.trim())[0] ?? 'T').toUpperCase();
+    const initial = String(Array.from(name.trim())[0] ?? 'T').toUpperCase();
     return { name, initial, ownedBySelf: false };
   };
   const visibleProjects = useMemo(

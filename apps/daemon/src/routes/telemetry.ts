@@ -1,6 +1,4 @@
 import express, { type Express } from 'express';
-import { SIDECAR_DEFAULTS, SIDECAR_ENV } from '@open-design/sidecar-proto';
-import { randomUUID } from 'node:crypto';
 import {
   type McpAnalyticsEventRequest,
   type McpAnalyticsContextResponse,
@@ -15,7 +13,6 @@ import type { AnalyticsContext } from '../analytics.js';
 import type { readAppConfig, writeAppConfig } from '../app-config.js';
 import { readCurrentAppVersionInfo } from '../app-version.js';
 import { reportRunFeedbackFromDaemon } from '../langfuse-bridge.js';
-import { observePendingInstallerApplyAttempts } from '../migration/index.js';
 import {
   OPEN_DESIGN_PLUGIN_ID,
 } from '../mcp-observability.js';
@@ -41,36 +38,13 @@ export interface RegisterTelemetryRoutesDeps {
 }
 
 export async function resolveMcpAnalyticsContext(
-  deps: RegisterTelemetryRoutesDeps,
+  _deps: RegisterTelemetryRoutesDeps,
 ): Promise<McpAnalyticsContextResponse> {
-  const disabled: McpAnalyticsContextResponse = {
+  return {
     enabled: false,
     deviceId: null,
     locale: 'en',
   };
-  try {
-    let appCfg = await deps.readAppConfig(deps.dataDir);
-    if (appCfg.telemetry?.metrics !== true) return disabled;
-    let installationId =
-      typeof appCfg.installationId === 'string' && appCfg.installationId
-        ? appCfg.installationId
-        : null;
-    if (!installationId) {
-      installationId = randomUUID();
-      appCfg = await deps.writeAppConfig(deps.dataDir, { installationId });
-      installationId =
-        typeof appCfg.installationId === 'string' && appCfg.installationId
-          ? appCfg.installationId
-          : null;
-    }
-    return {
-      enabled: installationId !== null,
-      deviceId: installationId,
-      locale: 'en',
-    };
-  } catch {
-    return disabled;
-  }
 }
 
 /**
@@ -79,27 +53,10 @@ export async function resolveMcpAnalyticsContext(
  * the daemon's resolved data root, and metrics consent must still be enabled.
  */
 export async function resolveTrustedMcpEventContext(
-  deps: RegisterTelemetryRoutesDeps,
-  context: AnalyticsContext | null,
+  _deps: RegisterTelemetryRoutesDeps,
+  _context: AnalyticsContext | null,
 ): Promise<AnalyticsContext | null> {
-  if (!context || context.clientType !== 'external_mcp') return null;
-  try {
-    const appCfg = await deps.readAppConfig(deps.dataDir);
-    const installationId =
-      typeof appCfg.installationId === 'string' && appCfg.installationId
-        ? appCfg.installationId
-        : null;
-    if (
-      appCfg.telemetry?.metrics !== true
-      || !installationId
-      || context.deviceId !== installationId
-    ) {
-      return null;
-    }
-    return context;
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 export function registerTelemetryRoutes(app: Express, deps: RegisterTelemetryRoutesDeps): DaemonTelemetry {
@@ -242,23 +199,11 @@ export function registerTelemetryRoutes(app: Express, deps: RegisterTelemetryRou
     res.json({ ok: true });
   });
 
-  const disposeFatalHandlers = installFatalTelemetryHandlers({
-    analyticsService,
-    getAppVersion: () => cachedAppVersion,
-  });
+  const disposeFatalHandlers = () => undefined;
 
   void (async () => {
     try {
       cachedAppVersion = await readCurrentAppVersionInfo();
-      await observePendingInstallerApplyAttempts({
-        analytics: analyticsService,
-        appVersion: cachedAppVersion.version,
-        currentChannel: cachedAppVersion.channel,
-        currentVersion: cachedAppVersion.version,
-        dataRoot: dataDir,
-        logger: console,
-        namespace: process.env[SIDECAR_ENV.NAMESPACE] ?? SIDECAR_DEFAULTS.namespace,
-      });
     } catch {
       // Telemetry is best-effort; appVersion is omitted when unavailable.
     }

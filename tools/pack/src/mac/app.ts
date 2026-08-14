@@ -165,10 +165,7 @@ export function renderMacPackagedConfig(options: {
         ? { daemonSidecarEntryRelative: MAC_PREBUNDLED_DAEMON_SIDECAR_RELATIVE_PATH }
         : {}),
       namespace: options.config.namespace,
-      ...(options.config.telemetryRelayUrl == null ? {} : { telemetryRelayUrl: options.config.telemetryRelayUrl }),
       ...(options.config.updateMetadataUrl == null ? {} : { updateMetadataUrl: options.config.updateMetadataUrl }),
-      ...(options.config.posthogKey == null ? {} : { posthogKey: options.config.posthogKey }),
-      ...(options.config.posthogHost == null ? {} : { posthogHost: options.config.posthogHost }),
       ...(options.config.velaWebUrl == null ? {} : { velaWebUrl: options.config.velaWebUrl }),
       ...(options.usePrebundledStandaloneWeb ? { webSidecarEntryRelative: MAC_PREBUNDLED_WEB_SIDECAR_RELATIVE_PATH } : {}),
       webOutputMode: options.config.webOutputMode,
@@ -343,7 +340,7 @@ export async function writeAssembledApp(
     `${JSON.stringify(
       {
         dependencies,
-        description: "Open Design packaged runtime",
+        description: "NamVu Design packaged runtime",
         main: "./main.cjs",
         name: "open-design-packaged-app",
         ...(optionalDependencies == null ? {} : { optionalDependencies }),

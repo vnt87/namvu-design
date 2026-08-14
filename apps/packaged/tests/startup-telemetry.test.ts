@@ -194,7 +194,7 @@ describe('captureStartupFailure', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('POSTs to /capture/ with the PostHog wire shape', async () => {
+  it('ignores legacy credentials and never POSTs', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response('ok'));
     await captureStartupFailure(
       {
@@ -206,18 +206,10 @@ describe('captureStartupFailure', () => {
       },
       { fetchImpl: fetchImpl as unknown as typeof fetch, now: () => '2026-06-23T00:00:00.000Z' },
     );
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('https://us.i.posthog.com/capture/');
-    const body = JSON.parse(init.body as string) as Record<string, unknown>;
-    expect(body.api_key).toBe('phc_test');
-    expect(body.event).toBe(STARTUP_FAILURE_EVENT);
-    expect(body.distinct_id).toBe('install-123');
-    expect((body.properties as Record<string, unknown>).failure_kind).toBe('daemon-start');
-    expect((body.properties as Record<string, unknown>).$os).toBeDefined();
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('stamps the shared safety-event envelope so dashboards bucket it', async () => {
+  it('does not create a remote safety-event envelope', async () => {
     // Mirrors captureSafety in apps/daemon/src/analytics.ts. Without these,
     // env/schema-filtered dashboards miss or mis-bucket the event even though
     // PostHog accepts the raw payload (PerishCode review on #4696).
@@ -236,20 +228,10 @@ describe('captureStartupFailure', () => {
         insertId: 'ins-fixed',
       },
     );
-    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    const p = (JSON.parse(init.body as string) as { properties: Record<string, unknown> })
-      .properties;
-    expect(p.event_schema_version).toBe(2);
-    expect(p.device_id).toBe('install-123');
-    expect(p.client_type).toBe('packaged_main');
-    expect(p.capture_source).toBe('packaged/startup');
-    expect(p.ui_version).toBe('0.11.0');
-    expect(p.event_id).toBe('ins-fixed');
-    expect(p.$insert_id).toBe('ins-fixed');
-    expect(typeof p.env).toBe('string');
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('labels main-process events production (unset NODE_ENV) so they match daemon events', async () => {
+  it('does not report when telemetry environment variables are unset', async () => {
     // The packaged main process has no NODE_ENV of its own, while the daemon it
     // spawns runs with NODE_ENV=production. Without this the event reported
     // `development` — 100% of packaged_runtime_failed were mislabeled dev in
@@ -278,10 +260,7 @@ describe('captureStartupFailure', () => {
         },
         { fetchImpl: fetchImpl as unknown as typeof fetch, now: () => '2026-06-23T00:00:00.000Z' },
       );
-      const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-      const p = (JSON.parse(init.body as string) as { properties: Record<string, unknown> })
-        .properties;
-      expect(p.env).toBe('production');
+      expect(fetchImpl).not.toHaveBeenCalled();
     } finally {
       for (const [k, v] of Object.entries(saved)) {
         if (v === undefined) delete process.env[k];
@@ -290,7 +269,7 @@ describe('captureStartupFailure', () => {
     }
   });
 
-  it('honors an explicit OD_TELEMETRY_ENV override (local smoke test can force dev)', async () => {
+  it('ignores an explicit legacy telemetry environment override', async () => {
     const savedOd = process.env.OD_TELEMETRY_ENV;
     process.env.OD_TELEMETRY_ENV = 'development';
     try {
@@ -305,10 +284,7 @@ describe('captureStartupFailure', () => {
         },
         { fetchImpl: fetchImpl as unknown as typeof fetch, now: () => '2026-06-23T00:00:00.000Z' },
       );
-      const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-      const p = (JSON.parse(init.body as string) as { properties: Record<string, unknown> })
-        .properties;
-      expect(p.env).toBe('development');
+      expect(fetchImpl).not.toHaveBeenCalled();
     } finally {
       if (savedOd === undefined) delete process.env.OD_TELEMETRY_ENV;
       else process.env.OD_TELEMETRY_ENV = savedOd;
@@ -342,7 +318,7 @@ describe('captureStartupFailure', () => {
 });
 
 describe('reportStartupFailure', () => {
-  it('reads the log tail, enriches the event, scrubs paths, and sends once', async () => {
+  it('never sends startup diagnostics remotely, even with legacy credentials', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response('ok'));
     await reportStartupFailure(
       {
@@ -361,16 +337,7 @@ describe('reportStartupFailure', () => {
         now: () => '2026-06-23T00:00:00.000Z',
       },
     );
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
-    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    const props = (JSON.parse(init.body as string) as { properties: Record<string, unknown> })
-      .properties;
-    expect(props.failure_kind).toBe('daemon-start');
-    expect(props.error_code).toBe('ERR_MODULE_NOT_FOUND');
-    expect(props.missing_module).toBe('better-sqlite3');
-    expect(props.app_version).toBe('0.11.0');
-    expect(props.exit_code).toBe(1);
-    expect(props.log_path).not.toContain('liudetao');
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it('never throws even when the log read blows up', async () => {
@@ -421,7 +388,7 @@ describe('reportStartupFailure', () => {
   // can't load it, the event must carry on-machine evidence: the scrubbed error
   // message/stack (the only signal for the `unknown` bucket, which has no daemon
   // log to parse) and whether the native module file actually exists there.
-  it('captures scrubbed error message/stack + native-module probe (on-machine evidence)', async () => {
+  it('does not probe or report native-module evidence remotely', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response('ok'));
     const error = new Error(
       "Cannot find package 'better-sqlite3' imported from /Users/liudetao/App/Contents/Resources/app/prebundled/daemon/server.mjs",
@@ -446,19 +413,10 @@ describe('reportStartupFailure', () => {
         statNativeModule: (p) => (p.endsWith('better_sqlite3.node') ? { size: 1_234_567 } : null),
       },
     );
-    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    const props = (JSON.parse(init.body as string) as { properties: Record<string, unknown> }).properties;
-    // scrubbed message/stack: content kept, home dir gone.
-    expect(props.error_message).toContain("Cannot find package 'better-sqlite3'");
-    expect(props.error_message).not.toContain('liudetao');
-    expect(String(props.error_stack)).not.toContain('liudetao');
-    // native-module probe answers "is the .node actually on THIS machine".
-    expect(props.native_module_present).toBe(true);
-    expect(props.native_module_size).toBe(1_234_567);
-    expect(props.native_module_path).not.toContain('liudetao');
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('reports native_module_present=false when the .node is missing on the machine', async () => {
+  it('does not report a missing native module remotely', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response('ok'));
     await reportStartupFailure(
       {
@@ -478,10 +436,7 @@ describe('reportStartupFailure', () => {
         statNativeModule: () => null,
       },
     );
-    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    const props = (JSON.parse(init.body as string) as { properties: Record<string, unknown> }).properties;
-    expect(props.native_module_present).toBe(false);
-    expect(props.native_module_size).toBeNull();
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });
 
@@ -526,7 +481,7 @@ SqliteError: database disk image is malformed
     );
   });
 
-  it('sends the Node errno triplet off the error object', async () => {
+  it('does not send the Node errno triplet remotely', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response('ok'));
     // Exactly how Node shapes a failed CreateProcess on win32.
     const spawnError = Object.assign(new Error('spawn UNKNOWN'), {
@@ -547,16 +502,10 @@ SqliteError: database disk image is malformed
       },
       { fetchImpl: fetchImpl as unknown as typeof fetch },
     );
-    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    const props = (JSON.parse(init.body as string) as { properties: Record<string, unknown> })
-      .properties;
-    expect(props.sys_code).toBe('UNKNOWN');
-    expect(props.sys_errno).toBe(-4094);
-    expect(props.sys_syscall).toBe('spawn');
-    expect(props.failure_kind).toBe('spawn-failed');
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('never reports a null error_message for an Error that carries none', async () => {
+  it('does not send an empty error remotely', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response('ok'));
     // The 149-device black hole: instanceof Error, name 'Error', no message, no
     // stack. Whatever we send must be non-null so the residue stays countable.
@@ -575,14 +524,10 @@ SqliteError: database disk image is malformed
       },
       { fetchImpl: fetchImpl as unknown as typeof fetch },
     );
-    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    const props = (JSON.parse(init.body as string) as { properties: Record<string, unknown> })
-      .properties;
-    expect(props.error_message).not.toBeNull();
-    expect(String(props.error_message)).toContain('Error');
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('surfaces the parsed daemon error on the emitted event', async () => {
+  it('does not send parsed daemon errors remotely', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response('ok'));
     await reportStartupFailure(
       {
@@ -600,10 +545,7 @@ SqliteError: database disk image is malformed
         readLogTail: async () => NON_ERR_CODE_LOG,
       },
     );
-    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    const props = (JSON.parse(init.body as string) as { properties: Record<string, unknown> })
-      .properties;
-    expect(props.daemon_error).toBe('SqliteError: database disk image is malformed');
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });
 
@@ -632,7 +574,7 @@ describe('errno triplet privacy', () => {
     expect(readErrnoFields(err).syscall).toBe('spawn');
   });
 
-  it('emits no username anywhere in the payload for a path-bearing spawn failure', async () => {
+  it('does not emit a payload for a path-bearing spawn failure', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response('ok'));
     const err = Object.assign(new Error('spawn /Users/alice/tools/vela ENOENT'), {
       code: 'ENOENT',
@@ -652,8 +594,7 @@ describe('errno triplet privacy', () => {
       },
       { fetchImpl: fetchImpl as unknown as typeof fetch },
     );
-    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    expect(init.body as string).not.toContain('alice');
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it('classifies a spawn failure whose syscall carries a path', () => {

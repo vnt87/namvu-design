@@ -45,15 +45,8 @@ afterEach(() => {
   document.documentElement.removeAttribute('data-od-app-mounted');
 });
 
-function lastSentEvent(): { event: string; properties: Record<string, unknown> } | null {
-  const lastCall = fetchMock.mock.calls.at(-1);
-  if (!lastCall) return null;
-  const init = lastCall[1] as RequestInit;
-  return JSON.parse(init.body as string) as { event: string; properties: Record<string, unknown> };
-}
-
 describe('observability/white-screen', () => {
-  it('fires client_white_screen when only the dynamic-import loading shell is in the DOM after the timeout', () => {
+  it('does not report remotely when only the dynamic-import loading shell remains', () => {
     // Reproduces the codex-review reported bug: the loading shell text
     // "Loading Open Design…" is longer than the legacy 10-char floor.
     const shell = document.createElement('div');
@@ -66,13 +59,7 @@ describe('observability/white-screen', () => {
     // timer-aware via vi.useFakeTimers above.
     vi.advanceTimersByTime(6000);
 
-    expect(fetchMock).toHaveBeenCalled();
-    const sent = lastSentEvent();
-    expect(sent?.event).toBe('client_white_screen');
-    expect(sent?.properties).toMatchObject({
-      reason: 'app_not_mounted_after_timeout',
-      timeout_ms: 5000,
-    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('does NOT fire when the app sets the data-od-app-mounted marker before the timeout', () => {
@@ -111,7 +98,7 @@ describe('observability/white-screen', () => {
     });
   });
 
-  it('fires when only sub-MIN_VISIBLE_TEXT non-shell content is present (still effectively blank)', () => {
+  it('does not report remotely when the page is effectively blank', () => {
     const tiny = document.createElement('div');
     tiny.textContent = '...';
     document.body.appendChild(tiny);
@@ -119,8 +106,6 @@ describe('observability/white-screen', () => {
     installWhiteScreenDetector();
     vi.advanceTimersByTime(6000);
 
-    expect(fetchMock).toHaveBeenCalled();
-    const sent = lastSentEvent();
-    expect(sent?.event).toBe('client_white_screen');
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

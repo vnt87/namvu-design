@@ -74,11 +74,11 @@ const baseConfig: AppConfig = {
 };
 
 describe('shouldRouteToFirstRunOnboarding', () => {
-  it('never hijacks an explicit project deep link while daemon config is hydrating', () => {
+  it('never redirects local-first launches into onboarding', () => {
     const unfinished = { ...baseConfig, onboardingCompleted: false };
 
     expect(shouldRouteToFirstRunOnboarding(unfinished, '/projects/project-a')).toBe(false);
-    expect(shouldRouteToFirstRunOnboarding(unfinished, '/')).toBe(true);
+    expect(shouldRouteToFirstRunOnboarding(unfinished, '/')).toBe(false);
   });
 });
 

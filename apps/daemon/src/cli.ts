@@ -273,7 +273,7 @@ const DEPLOY_STRING_FLAGS = new Set([
 const DEPLOY_BOOLEAN_FLAGS = new Set(['help', 'h', 'json']);
 // `od automation …` mirrors the Automations tab. Same surface, same
 // /api/routines store. The CLI form is the embeddability contract:
-// external agents (hermes-agent, openclaw, etc.) can drive Open Design
+// external agents (hermes-agent, openclaw, etc.) can drive NamVu Design
 // automations headlessly without going through the web UI.
 const AUTOMATION_STRING_FLAGS = new Set([
   'daemon-url', 'name', 'prompt', 'prompt-file', 'schedule', 'target',
@@ -369,6 +369,11 @@ const PLUGIN_LIST_BOOLEAN_FLAGS = new Set([
   ...PLUGIN_BOOLEAN_FLAGS,
   'bundled', 'no-bundled',
 ]);
+const STATISTICS_STRING_FLAGS = new Set([
+  'daemon-url', 'range', 'project', 'workspace', 'model', 'provider',
+  'feature', 'category', 'result', 'limit', 'cursor',
+]);
+const STATISTICS_BOOLEAN_FLAGS = new Set(['help', 'h', 'json', 'confirm']);
 
 const SUBCOMMAND_MAP = {
   artifacts: runArtifacts,
@@ -403,6 +408,7 @@ const SUBCOMMAND_MAP = {
   resource: runResource,
   craft: runCraft,
   diagnostics: runDiagnostics,
+  statistics: runStatistics,
   export: runExport,
   status: runStatus,
   version: runVersion,
@@ -711,7 +717,7 @@ function printRootHelp() {
   od plugin publish-repo <folder>
       Create/update the author's GitHub repo for a local plugin folder.
   od plugin open-design-pr <folder>
-      Push a community-catalog branch and open the Open Design PR form.
+      Push a community-catalog branch and open the NamVu Design PR form.
 
   od automation <list|get|create|update|run|runs|pause|resume|delete> [args]
       Drive the Automations surface headlessly. Same store as the UI's
@@ -725,13 +731,13 @@ function printRootHelp() {
 
   od amr <login|status> [args]
       Start Vela browser sign-in or inspect the current Vela account through
-      the local Open Design daemon.
+      the local NamVu Design daemon.
 
   od memory tree <list|view|edit|move> [args]
       Inspect and edit the memory tree that is injected into agent prompts.
 
   od share <open-design|url> [options]
-      Build localized social-share targets for the Open Design repo or a
+      Build localized social-share targets for the NamVu Design repo or a
       deployed project URL. Use --json for scripted integrations.
 
   od ui <list|show|respond|revoke|prefill> [args]
@@ -746,6 +752,10 @@ function printRootHelp() {
       Bundle daemon/web/desktop logs, machine info, and recent crash reports
       into a zip for support tickets. Same output as Settings → About →
       Export diagnostics.
+
+  od statistics <show|events|reset> [filters] [--json]
+      View or clear the device-local usage statistics shown in Settings →
+      Statistics. Reset requires --confirm.
 
   od export <file> --project <id> --format <pdf|image|pptx> [--out <path>]
       Programmatically export an HTML/deck artifact to PDF, image, or PPTX
@@ -762,9 +772,9 @@ function printRootHelp() {
 
   od mcp [--daemon-url <url>]
       Run a stdio MCP server that proxies project tool calls to a
-      running Open Design daemon. Wire it into a coding agent
+      running NamVu Design daemon. Wire it into a coding agent
       (Claude Code, Cursor, VS Code, Zed, Windsurf) in another repo
-      to pull files from a local Open Design project and create
+      to pull files from a local NamVu Design project and create
       project-scoped artifacts without exporting a zip.
 
 Options:
@@ -795,7 +805,7 @@ async function runAmr(args) {
   od amr status [--refresh] [--json]
 
 Options:
-  --daemon-url <url>   Open Design daemon HTTP base.
+  --daemon-url <url>   NamVu Design daemon HTTP base.
   --refresh            Bypass the daemon's short wallet display cache.
   --json               Emit raw JSON.`);
     process.exit(sub === 'help' || args.includes('--help') || args.includes('-h') ? 0 : 2);
@@ -1344,7 +1354,107 @@ Options:
   --limit <n>           Positive integer page size (default: 100).
   --cursor <token>      Forward a server pagination cursor for list.
   --json                Emit raw JSON for scripts and external agents.
-  --daemon-url <url>    Open Design daemon HTTP base.`);
+  --daemon-url <url>    NamVu Design daemon HTTP base.`);
+}
+
+async function runStatistics(args) {
+  const sub = args[0] && !args[0].startsWith('--') ? args[0] : 'show';
+  if (sub === 'help' || args.includes('--help') || args.includes('-h')) {
+    printStatisticsHelp();
+    return;
+  }
+  const rest = sub === 'show' && args[0]?.startsWith('--') ? args : args.slice(1);
+  let flags;
+  try {
+    flags = parseFlags(rest, {
+      string: STATISTICS_STRING_FLAGS,
+      boolean: STATISTICS_BOOLEAN_FLAGS,
+    });
+  } catch (err) {
+    console.error(err.message);
+    printStatisticsHelp();
+    process.exit(2);
+  }
+  if (!['show', 'events', 'reset'].includes(sub)) {
+    console.error(`unknown subcommand: od statistics ${sub}`);
+    printStatisticsHelp();
+    process.exit(2);
+  }
+  if (sub === 'reset' && !flags.confirm) {
+    console.error('Refusing to clear local statistics without --confirm.');
+    process.exit(2);
+  }
+  const base = await cliDaemonBaseUrl(flags);
+  const query = statisticsQuery(flags, sub === 'events');
+  let response;
+  try {
+    response = await fetch(`${base}/api/statistics${sub === 'events' ? '/events' : ''}${query.size > 0 ? `?${query}` : ''}`, {
+      method: sub === 'reset' ? 'DELETE' : 'GET',
+    });
+  } catch (err) {
+    surfaceFetchError(err, base);
+    process.exit(3);
+  }
+  if (!response.ok) return structuredHttpFailure(response);
+  const payload = await response.json();
+  if (flags.json) {
+    process.stdout.write(JSON.stringify(payload, null, 2) + '\n');
+    return;
+  }
+  if (sub === 'reset') {
+    console.log(`Cleared ${payload.deleted ?? 0} local statistic events.`);
+    return;
+  }
+  if (sub === 'events') {
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    if (items.length === 0) console.log('No local statistic events.');
+    for (const event of items) {
+      console.log(`${new Date(event.occurredAt).toISOString()}\t${event.category}\t${event.feature ?? event.name}\t${event.result ?? '-'}`);
+    }
+    if (payload.nextCursor) console.log(`nextCursor\t${payload.nextCursor}`);
+    return;
+  }
+  const summary = payload.summary ?? {};
+  console.log(`Range\t${payload.filters?.range ?? '30d'}`);
+  console.log(`Runs\t${summary.runs ?? 0}`);
+  console.log(`Events\t${summary.events ?? 0}`);
+  console.log(`Tokens\t${summary.totalTokens ?? 0}`);
+  console.log(`Generation time (ms)\t${summary.durationMs ?? 0}`);
+  console.log(`Artifacts\t${summary.artifacts ?? 0}`);
+  console.log(`Success rate\t${summary.successRate == null ? '-' : `${Math.round(summary.successRate * 100)}%`}`);
+}
+
+function statisticsQuery(flags, includePage) {
+  const query = new URLSearchParams();
+  const mappings = [
+    ['range', 'range'], ['project', 'projectId'], ['workspace', 'workspaceId'],
+    ['model', 'modelId'], ['provider', 'providerId'], ['feature', 'feature'],
+    ['category', 'category'], ['result', 'result'],
+  ];
+  for (const [flag, parameter] of mappings) {
+    if (typeof flags[flag] === 'string' && flags[flag]) query.set(parameter, flags[flag]);
+  }
+  if (includePage) {
+    if (typeof flags.limit === 'string') query.set('limit', flags.limit);
+    if (typeof flags.cursor === 'string') query.set('cursor', flags.cursor);
+  }
+  return query;
+}
+
+function printStatisticsHelp() {
+  console.log(`Usage:
+  od statistics show [filters] [--json]
+  od statistics events [filters] [--limit <n>] [--cursor <token>] [--json]
+  od statistics reset --confirm [--json]
+
+Read or clear the same device-local statistics shown in Settings → Statistics.
+No statistic data is sent to a remote service.
+
+Filters:
+  --range <7d|30d|90d|all>
+  --project <id> --workspace <id> --model <id> --provider <id>
+  --feature <name> --category <name> --result <name>
+  --daemon-url <url>`);
 }
 
 function messageCenterApiLocale(locale) {
@@ -1430,7 +1540,7 @@ function printResearchHelp() {
   console.log(`Usage:
   od research search --query <text> [--max-sources 5] [--daemon-url <url>]
 
-Runs Tavily-backed shallow research through the local Open Design daemon.
+Runs Tavily-backed shallow research through the local NamVu Design daemon.
 Output is JSON only on stdout:
   { "query": "...", "summary": "...", "sources": [...], "provider": "tavily", "depth": "shallow", "fetchedAt": 0 }
 
@@ -1735,7 +1845,7 @@ function surfaceFetchError(err, daemonUrl) {
     console.error(
       'hint: outbound connect was denied by a sandbox. If you launched ' +
         'this command from a code agent, check the agent\'s sandbox / ' +
-        'network policy. The Open Design daemon itself is unaffected - it can be ' +
+        'network policy. The NamVu Design daemon itself is unaffected - it can be ' +
         'reached from a regular shell.',
     );
   }
@@ -1852,11 +1962,11 @@ Common options:
   --prompt-file <path|->     Read the prompt from a file, or - for stdin (for long-form prompts).
   --output <filename>       File to write under the project. Auto-named if omitted.
   --aspect 1:1|16:9|9:16|4:3|3:4
-  --quality <tier>          Open Design Cloud images only: published quality tier
+  --quality <tier>          NamVu Design Cloud images only: published quality tier
                             (gpt-image-2 accepts low|medium|high). Omit to let the
                             model's own default tier decide — tiers are priced
                             differently, so this is a billing choice.
-  --resolution <res>        Open Design Cloud images only: published output resolution
+  --resolution <res>        NamVu Design Cloud images only: published output resolution
                             (e.g. 1K, 2K). Must name a resolution the model publishes
                             for --aspect. Omit to use the model's default profile.
   --length <seconds>        Video length.
@@ -1951,13 +2061,13 @@ function printMcpHelp() {
   console.log(`Usage: od mcp [--daemon-url <url>]
 
 Run a stdio MCP (Model Context Protocol) server that proxies project
-tool calls to a running Open Design daemon. Wire it into a coding agent
-in another repo so the agent can pull files from a local Open Design
+tool calls to a running NamVu Design daemon. Wire it into a coding agent
+in another repo so the agent can pull files from a local NamVu Design
 project and create project-scoped artifacts without exporting a zip
 every iteration.
 
 Options:
-  --daemon-url <url>   Open Design daemon HTTP base URL. Resolution
+  --daemon-url <url>   NamVu Design daemon HTTP base URL. Resolution
                        order: this flag, OD_DAEMON_URL, OD_SIDECAR_IPC_PATH,
                        then http://127.0.0.1:7456. Each new MCP spawn
                        discovers the live daemon URL at startup, so
@@ -1969,10 +2079,10 @@ Options:
                        MCP server re-discovers the registered runtime
                        before calls and safely retries reads when the
                        daemon changes ports, so an existing task can
-                       survive an Open Design restart.
+                       survive an NamVu Design restart.
 
 Tools exposed:
-  list_projects                  list every Open Design project
+  list_projects                  list every NamVu Design project
   get_active_context             what project/file the user has open right now
   get_artifact([project, entry]) bundle: entry file + every referenced sibling
   get_project([project])         single project metadata
@@ -1983,13 +2093,13 @@ Tools exposed:
 
 When project is omitted, get_artifact / get_project / get_file /
 search_files / list_files / create_artifact default to the project the
-user has open in Open Design; get_artifact and get_file additionally
+user has open in NamVu Design; get_artifact and get_file additionally
 default to the active file. The response stamps usedActiveContext so
 callers can see which project/file got resolved.
 
 For the copy-paste, per-client snippet (with absolute paths resolved
 for your machine, plus a one-click deeplink for Cursor), open Settings
-→ MCP server in the Open Design app. The daemon must be running locally
+→ MCP server in the NamVu Design app. The daemon must be running locally
 for tool calls to succeed.
 
 To register this server into a coding agent's own config automatically:
@@ -2229,13 +2339,13 @@ async function runMcpInstall(args) {
 function printMcpInstallHelp() {
   console.log(`Usage: od mcp install <agent> [options]
 
-Register Open Design's stdio MCP server into a coding agent's own config.
+Register NamVu Design's stdio MCP server into a coding agent's own config.
 
 Agents:
   ${AGENT_SLUGS.join(' ')}
 
 Options:
-  --uninstall, --remove   Remove the Open Design MCP server instead.
+  --uninstall, --remove   Remove the NamVu Design MCP server instead.
   --print, --dry-run      Show what would change; write nothing.
   --json                  Machine-readable result (dry runs include launchSpec).
   --name <name>           MCP server name in the agent config (default: open-design).
@@ -2609,7 +2719,7 @@ async function runPluginLogin(rest) {
     console.log(`Usage:
   od plugin login [--host github.com]
 
-Wraps GitHub CLI auth for Open Design registry publishing. The token stays in gh.`);
+Wraps GitHub CLI auth for NamVu Design registry publishing. The token stays in gh.`);
     return;
   }
   const host = typeof flags.host === 'string' ? flags.host : 'github.com';
@@ -2631,7 +2741,7 @@ async function runPluginWhoami(rest) {
     console.log(`Usage:
   od plugin whoami [--host github.com] [--json]
 
-Shows the GitHub account gh will use for Open Design registry publishing.`);
+Shows the GitHub account gh will use for NamVu Design registry publishing.`);
     return;
   }
   const host = typeof flags.host === 'string' ? flags.host : 'github.com';
@@ -2825,7 +2935,7 @@ async function runMarketplace(args) {
                                                               Update the marketplace trust tier.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base (default OD_DAEMON_URL, OD_SIDECAR_IPC_PATH discovery, or http://127.0.0.1:7456).
+  --daemon-url <url>   NamVu Design daemon HTTP base (default OD_DAEMON_URL, OD_SIDECAR_IPC_PATH discovery, or http://127.0.0.1:7456).
   --json               Emit raw JSON (suitable for scripts).`);
     process.exit(args.length === 0 ? 2 : 0);
   }
@@ -2972,7 +3082,7 @@ Common options:
         console.error('[marketplace login] GitHub CLI is required. Install gh from https://cli.github.com/ and retry.');
         process.exit(1);
       }
-      console.log(`[marketplace login] authenticating gh for ${host}. Tokens stay in gh, not Open Design.`);
+      console.log(`[marketplace login] authenticating gh for ${host}. Tokens stay in gh, not NamVu Design.`);
       const result = await spawnPassthrough('gh', ['auth', 'login', '--hostname', host, '--web']);
       process.exit(result.code ?? 0);
     }
@@ -5721,7 +5831,7 @@ function printUiHelp() {
                                                      Pre-answer a surface so the run never broadcasts it.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base (default OD_DAEMON_URL, OD_SIDECAR_IPC_PATH discovery, or http://127.0.0.1:7456).
+  --daemon-url <url>   NamVu Design daemon HTTP base (default OD_DAEMON_URL, OD_SIDECAR_IPC_PATH discovery, or http://127.0.0.1:7456).
   --workspace <id>     Explicit Workspace id for a bound project or run.
   --workspace-member <id>
                        Explicit Workspace member id for a bound project or run.
@@ -5779,7 +5889,7 @@ function printPluginHelp() {
   od plugin whoami [--host github.com]     Show the gh account used for publishing.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base (default OD_DAEMON_URL, OD_SIDECAR_IPC_PATH discovery, or http://127.0.0.1:7456).
+  --daemon-url <url>   NamVu Design daemon HTTP base (default OD_DAEMON_URL, OD_SIDECAR_IPC_PATH discovery, or http://127.0.0.1:7456).
   --json               Emit raw JSON (suitable for scripts) instead of human-readable output.
 
 Installs support local folders, github:owner/repo refs, HTTPS .tgz archives,
@@ -5792,7 +5902,7 @@ and bare marketplace names resolved through configured registry sources.`);
 // Plan §6 Phase 1 follow-up + Phase 2C: thin CLI wrappers over the
 // existing daemon HTTP endpoints (POST /api/projects, POST /api/runs,
 // GET /api/projects/:id/files, …). The §12.5 walkthrough relies on
-// these so a code agent can drive Open Design end-to-end without
+// these so a code agent can drive NamVu Design end-to-end without
 // hitting `/api/*` directly. Spec §11.7 invariant: every UI feature is
 // reachable via the CLI; we wrap rather than duplicate.
 // ---------------------------------------------------------------------------
@@ -5811,7 +5921,7 @@ Platforms:
   x, linkedin, facebook, reddit, telegram, whatsapp, weibo, line, instagram, xiaohongshu
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base.
+  --daemon-url <url>   NamVu Design daemon HTTP base.
   --json               Emit raw JSON.`);
 }
 
@@ -5908,7 +6018,7 @@ Flags:
   --notes "<text>"     Design brief folded into the reshape prompt.
   --build              After import, start a run that builds the webpage.
   --prompt / --prompt-file   Override the build prompt (file or - for stdin).
-  --daemon-url <url>   Open Design daemon HTTP base.
+  --daemon-url <url>   NamVu Design daemon HTTP base.
   --workspace <id>     Explicit Workspace id for the bound project.
   --workspace-member <id>
                        Explicit Workspace member id for the bound project.
@@ -6596,7 +6706,7 @@ async function runProject(args) {
                     Synthesize a resume-conversation handoff prompt.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base.
+  --daemon-url <url>   NamVu Design daemon HTTP base.
   --workspace <id>     Exact Workspace for bound project requests.
   --workspace-member <id>
                        Exact caller membership for bound project requests.
@@ -6906,7 +7016,7 @@ async function runWorkspace(args) {
   od workspace billing [--workspace-type personal|team --workspace <id>] [--json]
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base.
+  --daemon-url <url>   NamVu Design daemon HTTP base.
   --member <id>        Workspace member id for route-level authorization.
   --role <role>        Workspace role: owner, admin, or member.
   --workspace-type <t> personal or team. A team share is refused in a personal
@@ -7192,7 +7302,7 @@ async function runRun(args) {
                                             provenance without applying them.
 
 Common options:
-  --daemon-url <url>         Open Design daemon HTTP base.
+  --daemon-url <url>         NamVu Design daemon HTTP base.
   --workspace <id>           Explicit Workspace id for a bound project.
   --workspace-member <id>    Explicit Workspace member id for a bound project.
   --json                     Emit raw JSON.`);
@@ -7506,7 +7616,7 @@ async function runShell(args) {
                                   working directory and attach to it.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base.
+  --daemon-url <url>   NamVu Design daemon HTTP base.
   --json               Print the created terminal session as JSON and exit
                        (does not attach).`);
     process.exit(args.length === 0 ? 2 : 0);
@@ -7648,7 +7758,7 @@ async function runFiles(args) {
                                                Restore a saved HTML as a new current version.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base.
+  --daemon-url <url>   NamVu Design daemon HTTP base.
   --workspace <id>     Exact Workspace for bound project requests.
   --workspace-member <id>
                        Exact caller membership for bound project requests.
@@ -8055,7 +8165,7 @@ async function runTemplates(args) {
   od templates delete <id>                          Delete a saved template by id.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base.
+  --daemon-url <url>   NamVu Design daemon HTTP base.
   --json               Emit raw JSON.`);
     process.exit(args.length === 0 ? 2 : 0);
   }
@@ -8213,7 +8323,7 @@ async function runConversation(args) {
   od conversation info <conversationId>      Print one conversation.
 
 Common options:
-  --daemon-url <url>         Open Design daemon HTTP base.
+  --daemon-url <url>         NamVu Design daemon HTTP base.
   --workspace <id>           Explicit Workspace id for a bound project.
   --workspace-member <id>    Explicit Workspace member id for a bound project.
   --json                     Emit raw JSON.`);
@@ -8321,7 +8431,7 @@ async function runChat(args) {
                                            message.
 
 Common options:
-  --daemon-url <url>         Open Design daemon HTTP base.
+  --daemon-url <url>         NamVu Design daemon HTTP base.
   --workspace <id>           Explicit Workspace id for the bound project.
   --workspace-member <id>    Explicit Workspace member id for the bound project.
   --json                     Emit raw JSON.`);
@@ -8413,7 +8523,7 @@ async function runDaemon(args) {
   od daemon db     vacuum                 Run SQLite VACUUM to reclaim space after deletes.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base.
+  --daemon-url <url>   NamVu Design daemon HTTP base.
   --headless           No browser auto-open; aliased --no-open.
   --serve-web          Serve the web UI over the existing port (no electron).
   --json               Emit raw JSON.`);
@@ -8624,7 +8734,7 @@ async function runAtoms(args) {
   od atoms info <id>        Print metadata + the bundled SKILL.md body.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base.
+  --daemon-url <url>   NamVu Design daemon HTTP base.
   --json               Emit raw JSON.`);
     process.exit(args.length === 0 ? 2 : 0);
   }
@@ -9181,7 +9291,7 @@ async function runDesignSystemImportLocal(args) {
   od design-systems import-local <path> [--name <name>] [--import-mode <mode>] [--craft <slugs>] [--json] [--daemon-url <url>]
   od design-systems import-local --path <path> [--name <name>] [--json]
 
-Imports a local project directory as an editable Open Design design system.
+Imports a local project directory as an editable NamVu Design design system.
 
   <path>                 Local project directory to scan.
   --path <path>          Path alternative for scripts that prefer named flags.
@@ -9212,7 +9322,7 @@ async function runDesignSystemImportGithub(args) {
   od design-systems import-github <url> [--branch <branch>] [--name <name>] [--import-mode <mode>] [--craft <slugs>] [--json] [--daemon-url <url>]
   od design-systems import-github --url <url> [--branch <branch>] [--json]
 
-Imports a public GitHub repository as an editable Open Design design system.
+Imports a public GitHub repository as an editable NamVu Design design system.
 
   <url>                  Repository root URL, e.g. https://github.com/acme/design-kit.
   --url <url>            URL alternative for scripts that prefer named flags.
@@ -9325,7 +9435,7 @@ async function runDesignSystemImportShadcn(args) {
     console.log(`Usage:
   od design-systems import-shadcn <reference> [--name <name>] [--import-mode <mode>] [--craft <slugs>] [--json] [--daemon-url <url>]
 
-Imports a shadcn registry item as an Open Design design system.
+Imports a shadcn registry item as an NamVu Design design system.
 
   <reference>            "<owner>/<repo>/<item>" (e.g. shadcn/ui/theme-zinc)
                          or an https URL to a registry-item JSON document.
@@ -9505,7 +9615,7 @@ async function runWhatsNew(args) {
   if (!resp.ok) return structuredHttpFailure(resp);
   const data = await resp.json();
   if (flags.json) return process.stdout.write(JSON.stringify(data, null, 2) + '\n');
-  console.log(`Open Design ${data?.version ?? 'unknown'}`);
+  console.log(`NamVu Design ${data?.version ?? 'unknown'}`);
   if (data?.content != null) {
     console.log(`\n${data.content.title}\n${data.content.body}`);
     if (data.content.linkUrl) console.log(`\nDetails: ${data.content.linkUrl}`);
@@ -9656,7 +9766,7 @@ async function runConfig(args) {
   od config unset <key>               Remove a top-level key.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base.
+  --daemon-url <url>   NamVu Design daemon HTTP base.
   --json               Emit raw JSON.`);
     process.exit(args.length === 0 ? 2 : 0);
   }
@@ -9823,7 +9933,7 @@ function printMemoryHelp() {
       profile/rewrite/verify hooks; --extraction maps to chatExtractionEnabled.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base.`);
+  --daemon-url <url>   NamVu Design daemon HTTP base.`);
 }
 
 function memoryPositionals(values) {
@@ -10751,7 +10861,7 @@ Output:
   can drive the full automation lifecycle headlessly.
 
 Common options:
-  --daemon-url <url>   Open Design daemon HTTP base.`);
+  --daemon-url <url>   NamVu Design daemon HTTP base.`);
 }
 
 async function runAutomation(args) {
@@ -11370,7 +11480,7 @@ Options:
   --workspace <id>                          Explicit Workspace id for a bound project.
   --workspace-member <id>                   Explicit Workspace member id for a bound project.
   --json                                    Emit raw JSON response.
-  --daemon-url <url>                        Open Design daemon HTTP base.`);
+  --daemon-url <url>                        NamVu Design daemon HTTP base.`);
     return;
   }
 

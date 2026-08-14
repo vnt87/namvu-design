@@ -991,8 +991,16 @@ function normalizeStatus(s: string): ReportContext['run']['status'] {
 }
 
 export async function reportRunCompletedFromDaemon(
-  opts: ReportRunCompletedFromDaemonOpts,
+  _opts: ReportRunCompletedFromDaemonOpts,
 ): Promise<LangfuseDeliveryState> {
+  if (remoteTelemetryDisabled()) {
+    return {
+      langfuse_expected: false,
+      langfuse_delivery_status: 'not_expected',
+      langfuse_drop_reason: 'missing_sink_config',
+    };
+  }
+  const opts = _opts;
   try {
     const { db, dataDir, run } = opts;
     const cfg = await readAppConfig(dataDir);
@@ -1244,8 +1252,10 @@ export type FeedbackReportOutcome =
   | { status: 'skipped_no_sink' };
 
 export async function reportRunFeedbackFromDaemon(
-  opts: ReportRunFeedbackFromDaemonOpts,
+  _opts: ReportRunFeedbackFromDaemonOpts,
 ): Promise<FeedbackReportOutcome> {
+  if (remoteTelemetryDisabled()) return { status: 'skipped_no_sink' };
+  const opts = _opts;
   let cfg;
   try {
     cfg = await readAppConfig(opts.dataDir);
@@ -1289,4 +1299,8 @@ export async function reportRunFeedbackFromDaemon(
     console.warn('[langfuse-bridge] feedback report failed:', String(err));
   });
   return { status: 'accepted' };
+}
+
+function remoteTelemetryDisabled(): boolean {
+  return true;
 }

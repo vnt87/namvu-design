@@ -2,29 +2,29 @@ import type { OpenDesignPluginCopy } from '../open-design-plugin-i18n';
 
 const ru: OpenDesignPluginCopy = {
   metadata: {
-    title: 'Open Design для Codex/ChatGPT | Установка плагина Open Design Cloud',
+    title: 'NamVu Design для Codex/ChatGPT | Установка плагина NamVu Design Cloud',
     description:
-      'Установите Open Design Cloud в Codex/ChatGPT и создавайте сайты, презентации, прототипы и дизайн-системы, не выходя из текущей задачи.',
+      'Установите NamVu Design Cloud в Codex/ChatGPT и создавайте сайты, презентации, прототипы и дизайн-системы, не выходя из текущей задачи.',
     keywords:
-      'плагин Open Design для Codex, плагин для приложения ChatGPT, установка плагина Codex, Open Design Cloud, плагин для дизайна в Codex, Codex MCP',
+      'плагин NamVu Design для Codex, плагин для приложения ChatGPT, установка плагина Codex, NamVu Design Cloud, плагин для дизайна в Codex, Codex MCP',
   },
   hero: {
-    title: 'Плагин Open Design для Codex/ChatGPT',
+    title: 'Плагин NamVu Design для Codex/ChatGPT',
     leadBefore: 'Введите инструкцию ниже в любую задачу в приложении',
     chatgptLabel: 'ChatGPT для компьютера',
-    installAria: 'Установить Open Design Cloud в Codex/ChatGPT',
+    installAria: 'Установить NamVu Design Cloud в Codex/ChatGPT',
     copy: 'Копировать',
     github: 'Открыть руководство по установке на GitHub ↗',
   },
   demo: {
     title: 'Одна установка — и можно создавать прямо из Codex/ChatGPT.',
     lead:
-      'Сначала посмотрите, как вместе работают Codex и Open Design, а затем пройдите реальный путь от установки до готового результата.',
+      'Сначала посмотрите, как вместе работают Codex и NamVu Design, а затем пройдите реальный путь от установки до готового результата.',
     overviewAlt:
-      'Реальная задача в Codex с плагином Open Design и готовым сайтом кафе Goodfield',
+      'Реальная задача в Codex с плагином NamVu Design и готовым сайтом кафе Goodfield',
     overviewLabel: 'Реальная задача в Codex',
     overviewCaption:
-      'Запрос, передача задачи в Open Design, созданные файлы и готовый сайт остаются видны в одном рабочем пространстве.',
+      'Запрос, передача задачи в NamVu Design, созданные файлы и готовый сайт остаются видны в одном рабочем пространстве.',
     stepListAria: 'Пять этапов реальной работы с плагином в Codex',
     installPhase: 'Установка',
     installTitle: 'Поручите установку Codex',
@@ -36,46 +36,46 @@ const ru: OpenDesignPluginCopy = {
         phase: 'Работа',
         title: 'Начните новую задачу в Codex',
         body:
-          'Когда Codex завершит установку, откройте установленный плагин Open Design в новой задаче и нажмите «Try now», чтобы начать.',
-        alt: 'Настоящий экран плагина Open Design в Codex с кнопкой Try now',
+          'Когда Codex завершит установку, откройте установленный плагин NamVu Design в новой задаче и нажмите «Try now», чтобы начать.',
+        alt: 'Настоящий экран плагина NamVu Design в Codex с кнопкой Try now',
       },
       {
         phase: 'Создание',
         title: 'Опишите задачу для дизайна',
         body:
-          'Упомяните Open Design, затем укажите, что нужно создать, какое содержание использовать, какое визуальное направление выбрать и как результат должен адаптироваться к разным экранам.',
-        alt: 'Реальный запрос в Codex к Open Design на создание уютного сайта районного кафе',
+          'Упомяните NamVu Design, затем укажите, что нужно создать, какое содержание использовать, какое визуальное направление выбрать и как результат должен адаптироваться к разным экранам.',
+        alt: 'Реальный запрос в Codex к NamVu Design на создание уютного сайта районного кафе',
       },
       {
         phase: 'Создание',
         title: 'Следите за передачей задачи в реальном времени',
         body:
-          'Codex подтверждает выбранное направление, создаёт проект и передаёт работу в Open Design, а новые файлы появляются прямо на экране.',
-        alt: 'Настоящее рабочее пространство Codex и Open Design во время создания сайта районного кафе',
+          'Codex подтверждает выбранное направление, создаёт проект и передаёт работу в NamVu Design, а новые файлы появляются прямо на экране.',
+        alt: 'Настоящее рабочее пространство Codex и NamVu Design во время создания сайта районного кафе',
       },
       {
         phase: 'Создание',
         title: 'Проверьте результат',
         body:
           'В той же задаче появятся адаптивный лендинг кафе Goodfield, созданные изображения и редактируемые файлы.',
-        alt: 'Готовый лендинг районного кафе Goodfield, созданный через плагин Open Design в Codex',
+        alt: 'Готовый лендинг районного кафе Goodfield, созданный через плагин NamVu Design в Codex',
       },
     ],
   },
   use: {
     title: 'Начните с готового запроса.',
     lead:
-      'Выберите Open Design в меню плагинов Codex, опишите нужный результат и продолжайте дорабатывать его в той же задаче. Упоминание плагина отображается в Codex как метка Open Design.',
+      'Выберите NamVu Design в меню плагинов Codex, опишите нужный результат и продолжайте дорабатывать его в той же задаче. Упоминание плагина отображается в Codex как метка NamVu Design.',
     promptLabel: 'Запрос из записанной задачи Codex',
     copyPrompt: 'Копировать запрос для Codex',
-    galleryAria: 'Примеры, созданные с помощью Open Design',
+    galleryAria: 'Примеры, созданные с помощью NamVu Design',
     templates: [
       {
         alt: 'Продуктовый лендинг Oryzo с фактурным макетным ковриком и объектом из пробки',
         label: 'Запуск продукта',
       },
       {
-        alt: 'Лендинг мероприятия Open Design Osaka с типографической картой',
+        alt: 'Лендинг мероприятия NamVu Design Osaka с типографической картой',
         label: 'Страница мероприятия',
       },
       {
@@ -83,11 +83,11 @@ const ru: OpenDesignPluginCopy = {
         label: 'Редакционный сайт',
       },
       {
-        alt: 'Интерактивная временная шкала моделей Open Design на светлом холсте',
+        alt: 'Интерактивная временная шкала моделей NamVu Design на светлом холсте',
         label: 'Интерактивная история',
       },
     ],
-    promptListAria: 'Примеры запросов для Open Design Cloud',
+    promptListAria: 'Примеры запросов для NamVu Design Cloud',
     prompts: [
       { title: 'Сайт' },
       { title: 'Презентация' },
@@ -97,12 +97,12 @@ const ru: OpenDesignPluginCopy = {
   },
   faq: {
     title: 'Что стоит знать перед установкой',
-    lead: 'Codex управляет задачей, а Open Design отвечает за визуальный процесс.',
+    lead: 'Codex управляет задачей, а NamVu Design отвечает за визуальный процесс.',
     items: [
       {
         q: 'Что плагин добавляет в Codex?',
         a:
-          'Он добавляет в Codex рабочий процесс Open Design для создания сайтов, презентаций, прототипов и дизайн-систем. Плагин подключается к локальному Open Design MCP, который помогает собирать требования, создавать проекты и генерировать материалы.',
+          'Он добавляет в Codex рабочий процесс NamVu Design для создания сайтов, презентаций, прототипов и дизайн-систем. Плагин подключается к локальному NamVu Design MCP, который помогает собирать требования, создавать проекты и генерировать материалы.',
       },
       {
         q: 'Какие продукты Codex поддерживаются?',
@@ -112,27 +112,27 @@ const ru: OpenDesignPluginCopy = {
       {
         q: 'Что понадобится перед установкой?',
         a:
-          'Используйте Codex CLI 0.144.6 или новее и Open Design 0.17.0 или новее. Сначала установите Open Design, а затем зарегистрируйте его локальный MCP.',
+          'Используйте Codex CLI 0.144.6 или новее и NamVu Design 0.17.0 или новее. Сначала установите NamVu Design, а затем зарегистрируйте его локальный MCP.',
       },
       {
         q: 'Почему нужно начать новую задачу в Codex?',
         a:
-          'Codex загружает возможности плагинов и MCP при запуске задачи. Новая задача увидит только что установленный плагин Open Design Cloud.',
+          'Codex загружает возможности плагинов и MCP при запуске задачи. Новая задача увидит только что установленный плагин NamVu Design Cloud.',
       },
       {
-        q: 'Нужно ли держать окно Open Design открытым?',
+        q: 'Нужно ли держать окно NamVu Design открытым?',
         a:
-          'Нет. Зарегистрированный локальный MCP при необходимости может запустить подписанную среду Open Design в фоновом режиме без интерфейса.',
+          'Нет. Зарегистрированный локальный MCP при необходимости может запустить подписанную среду NamVu Design в фоновом режиме без интерфейса.',
       },
     ],
   },
   final: {
-    aria: 'Установить Open Design Cloud в Codex/ChatGPT',
-    title: 'Добавьте Open Design в свою следующую задачу Codex/ChatGPT.',
+    aria: 'Установить NamVu Design Cloud в Codex/ChatGPT',
+    title: 'Добавьте NamVu Design в свою следующую задачу Codex/ChatGPT.',
     bodyBeforeMention: 'Установите плагин, подключите локальный MCP и введите',
     bodyAfterMention: '.',
     copy: 'Копировать',
-    download: 'Скачать Open Design',
+    download: 'Скачать NamVu Design',
     source: 'Посмотреть исходный код',
   },
   clipboard: {
@@ -141,8 +141,8 @@ const ru: OpenDesignPluginCopy = {
     failed: 'Выделите и скопируйте',
   },
   schema: {
-    pageName: 'Плагин Open Design Cloud для Codex/ChatGPT',
-    applicationName: 'Плагин Open Design Cloud для Codex/ChatGPT',
+    pageName: 'Плагин NamVu Design Cloud для Codex/ChatGPT',
+    applicationName: 'Плагин NamVu Design Cloud для Codex/ChatGPT',
   },
 };
 

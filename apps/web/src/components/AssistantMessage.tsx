@@ -286,7 +286,7 @@ function SkillPluginCandidateCard({
         { action },
       );
       setNotice({
-        message: `Open Design contribution task started for ${data?.path ?? "the draft"}.`,
+        message: `NamVu Design contribution task started for ${data?.path ?? "the draft"}.`,
       });
     } catch (err) {
       setNotice({ message: err instanceof Error ? err.message : String(err) });
@@ -370,7 +370,7 @@ interface Props {
   ) => Promise<{ message?: string; url?: string } | void> | { message?: string; url?: string } | void;
   activePluginActionPaths?: Set<string>;
   hiddenPluginActionPaths?: Set<string>;
-  // Click handler for the post-completion "Share to Open Design" submission
+  // Click handler for the post-completion "Share to NamVu Design" submission
   // action. ProjectView wires this to handleSend with the bundled
   // `od-share-to-community` trigger prompt.
   onShareToOpenDesign?: () => void;
@@ -2321,7 +2321,7 @@ function PluginActionPanel({
                   <span>
                     {actionBusy && busyKey === `contribute:${folder.path}`
                       ? "Sending..."
-                      : "Open Design PR"}
+                      : "NamVu Design PR"}
                   </span>
                 </button>
                 {onRequestOpenFile ? (
@@ -2417,7 +2417,7 @@ function pathMatchesFolderFileBasename(
 }
 
 function hasPluginFinalActionHint(content: string): boolean {
-  return /\b(Add to My plugins|Open Design PR|Publish repo|plugin publish|ready to publish|ready to add)\b/i.test(
+  return /\b(Add to My plugins|NamVu Design PR|Publish repo|plugin publish|ready to publish|ready to add)\b/i.test(
     content,
   );
 }

@@ -140,15 +140,9 @@ describe("buildDockerArgs", () => {
     expect(args).toContain("ELECTRON_BUILDER_CACHE=/home/builder/.cache/electron-builder");
   });
 
-  it("passes the telemetry relay URL into containerized builds when configured", () => {
-    const args = buildDockerArgs(
-      {
-        ...makeConfig(),
-        telemetryRelayUrl: "https://telemetry.open-design.ai/api/langfuse",
-      },
-      { uid: 1000, gid: 1000 },
-    );
-    expect(args).toContain("OPEN_DESIGN_TELEMETRY_RELAY_URL=https://telemetry.open-design.ai/api/langfuse");
+  it("does not pass remote telemetry configuration into containerized builds", () => {
+    const args = buildDockerArgs(makeConfig(), { uid: 1000, gid: 1000 });
+    expect(args.some((arg) => arg.includes("TELEMETRY") || arg.includes("POSTHOG"))).toBe(false);
   });
 
   it("passes the AMR profile into containerized builds when configured", () => {
@@ -541,7 +535,7 @@ describe("stopPackedLinuxApp", () => {
       },
     };
     const appDir = join(root, "AppDir");
-    const executablePath = join(appDir, "Open Design");
+    const executablePath = join(appDir, "NamVu Design");
     const appRunPath = join(appDir, "AppRun");
     const markerPath = join(runtimeNamespaceRoot, "runtime", "desktop-root.json");
     const stamp = {
@@ -662,7 +656,7 @@ describe("resolveProductionInstallCommand", () => {
 describe("renderDesktopTemplate", () => {
   const template = `[Desktop Entry]
 Type=Application
-Name=Open Design (@@NAMESPACE@@)
+Name=NamVu Design (@@NAMESPACE@@)
 Exec=env -u ELECTRON_RUN_AS_NODE OD_PACKAGED_NAMESPACE=@@NAMESPACE@@ @@EXEC_PATH@@ --appimage-extract-and-run %U
 Icon=@@ICON_PATH@@
 MimeType=x-scheme-handler/od;
@@ -674,7 +668,7 @@ MimeType=x-scheme-handler/od;
       execPath: "/home/u/.local/bin/Open-Design.default.AppImage",
       iconName: "open-design-default",
     });
-    expect(out).toContain("Name=Open Design (default)");
+    expect(out).toContain("Name=NamVu Design (default)");
     expect(out).toContain(
       "Exec=env -u ELECTRON_RUN_AS_NODE OD_PACKAGED_NAMESPACE=default /home/u/.local/bin/Open-Design.default.AppImage --appimage-extract-and-run %U",
     );
@@ -750,7 +744,7 @@ describe("renderLinuxAppImageAppRun", () => {
 
     expect(out).toContain("unset ELECTRON_RUN_AS_NODE");
     expect(out.indexOf("unset ELECTRON_RUN_AS_NODE")).toBeLessThan(out.indexOf('exec "$BIN"'));
-    expect(out).toContain('BIN="$APPDIR/Open Design"');
+    expect(out).toContain('BIN="$APPDIR/NamVu Design"');
   });
 
   it("preserves AppImageLauncher install-only behavior", () => {
@@ -778,7 +772,7 @@ describe("renderLinuxAppImageAppRun", () => {
     const appDir = join(root, "AppDir");
     const appRunPath = join(appDir, "AppRun");
     const observedEnvPath = join(root, "observed-env.txt");
-    const electronPath = join(appDir, "Open Design");
+    const electronPath = join(appDir, "NamVu Design");
 
     try {
       await mkdir(appDir, { recursive: true });
@@ -900,7 +894,7 @@ describe("inspectPackedLinuxApp", () => {
     requestJsonIpcMock.mockReset();
     requestJsonIpcMock
       .mockResolvedValueOnce({ state: "running", url: "od://app/" })
-      .mockResolvedValueOnce({ ok: true, value: "Open Design" })
+      .mockResolvedValueOnce({ ok: true, value: "NamVu Design" })
       .mockResolvedValueOnce({ path: "/tmp/open-design-linux.png" });
 
     const result = await inspectPackedLinuxApp(makeConfig(), {
@@ -909,7 +903,7 @@ describe("inspectPackedLinuxApp", () => {
     });
 
     expect(result).toEqual({
-      eval: { ok: true, value: "Open Design" },
+      eval: { ok: true, value: "NamVu Design" },
       screenshot: { path: "/tmp/open-design-linux.png" },
       status: { state: "running", url: "od://app/" },
     });
@@ -964,7 +958,7 @@ describe("matchesAppImageProcess", () => {
     const ok = matchesAppImageProcess(
       {
         pid: 1234,
-        executable: "/tmp/appimage_extracted_fe548e54/Open Design",
+        executable: "/tmp/appimage_extracted_fe548e54/NamVu Design",
         env: { APPIMAGE: "/tmp/appimage_extracted_fe548e54/AppRun" },
       },
       installPath,
@@ -976,7 +970,7 @@ describe("matchesAppImageProcess", () => {
     const ok = matchesAppImageProcess(
       {
         pid: 1234,
-        executable: "/tmp/appimage_extracted_fe548e54/Open Design",
+        executable: "/tmp/appimage_extracted_fe548e54/NamVu Design",
         env: { APPIMAGE: "/tmp/other/AppRun" },
       },
       installPath,
@@ -988,7 +982,7 @@ describe("matchesAppImageProcess", () => {
     const ok = matchesAppImageProcess(
       {
         pid: 1234,
-        executable: "/tmp/appimage_extracted_fe548e54/Open Design",
+        executable: "/tmp/appimage_extracted_fe548e54/NamVu Design",
         env: { APPIMAGE: installPath },
       },
       installPath,
@@ -1000,7 +994,7 @@ describe("matchesAppImageProcess", () => {
     const ok = matchesAppImageProcess(
       {
         pid: 1234,
-        executable: "/tmp/appimage_extracted_fe548e54/Open Design",
+        executable: "/tmp/appimage_extracted_fe548e54/NamVu Design",
         env: { APPIMAGE: "/elsewhere/Other.AppImage" },
       },
       installPath,

@@ -232,9 +232,9 @@ interface PendingPluginUseHandoff {
 }
 
 const AUTHORING_DEFAULT_SCENARIO_INPUTS = {
-  artifactKind: 'Open Design plugin',
-  audience: 'Open Design plugin authors',
-  topic: 'packaging a reusable workflow as an Open Design plugin',
+  artifactKind: 'NamVu Design plugin',
+  audience: 'NamVu Design plugin authors',
+  topic: 'packaging a reusable workflow as an NamVu Design plugin',
 };
 
 
@@ -504,12 +504,7 @@ export function HomeView({
   // teammate's shared project (a project absent here is the member's own local
   // project → "我创建").
   const homeProjectOwnerMemberIds = useMemo(
-    () => projectOwnerMemberIds ?? new Map(
-      homeTeamProjects.projects.map((teamProject) => [
-        teamProject.projectId,
-        teamProject.ownerMemberId,
-      ]),
-    ),
+    () => projectOwnerMemberIds ?? new Map<string, string>(),
     [homeTeamProjects.projects, projectOwnerMemberIds],
   );
   // P0 page_view page_name=home — fire once on mount. ref-keyed to survive
@@ -1985,7 +1980,7 @@ export function HomeView({
       // auth gate and surface as a confusing late create-time failure.
       // Surface the host error instead and keep the existing working dir.
       setError(
-        `Couldn't open the folder picker (${'reason' in result ? result.reason : 'host unavailable'}). Please update Open Design and try again.`,
+        `Couldn't open the folder picker (${'reason' in result ? result.reason : 'host unavailable'}). Please update NamVu Design and try again.`,
       );
       return null;
     }
@@ -2010,7 +2005,7 @@ export function HomeView({
       }
       if ('canceled' in result && result.canceled) return null;
       setError(
-        `Couldn't open the folder picker (${'reason' in result ? result.reason : 'host unavailable'}). Please update Open Design and try again.`,
+        `Couldn't open the folder picker (${'reason' in result ? result.reason : 'host unavailable'}). Please update NamVu Design and try again.`,
       );
       return null;
     }

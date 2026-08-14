@@ -31,16 +31,10 @@ export type RawPackagedConfig = {
   namespaceBaseRoot?: string;
   nodeCommandRelative?: string;
   resourceRoot?: string;
-  // Baked by tools/pack from OPEN_DESIGN_TELEMETRY_RELAY_URL and forwarded to
-  // the daemon at runtime; Langfuse credentials never ship in packaged config.
+  // Legacy keys are accepted only so older manifests remain readable. Runtime
+  // configuration always resolves them to null and never forwards them.
   telemetryRelayUrl?: string;
   updateMetadataUrl?: string;
-  // PostHog product-analytics ingest key, baked by tools/pack from
-  // process.env.POSTHOG_KEY at packaging time. Forwarded to the daemon
-  // sidecar's spawn env as POSTHOG_KEY. `phc_` keys are public ingest
-  // tokens (write-only event capture); embedding them in the bundle is
-  // the PostHog-recommended pattern. The integration short-circuits when
-  // either this is absent or the user has declined Privacy → metrics.
   posthogKey?: string;
   posthogHost?: string;
   // Origin of the vela web console this build's AMR backend serves, baked by
@@ -211,10 +205,10 @@ export async function readPackagedConfig(): Promise<PackagedConfig> {
     namespaceBaseRoot,
     nodeCommand,
     resourceRoot,
-    telemetryRelayUrl: cleanOptionalString(raw.telemetryRelayUrl),
+    telemetryRelayUrl: null,
     updateMetadataUrl: cleanOptionalString(raw.updateMetadataUrl),
-    posthogKey: cleanOptionalString(raw.posthogKey),
-    posthogHost: cleanOptionalString(raw.posthogHost),
+    posthogKey: null,
+    posthogHost: null,
     velaWebUrl: cleanOptionalString(raw.velaWebUrl),
     webSidecarEntry,
     webStandaloneRoot,

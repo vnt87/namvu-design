@@ -24,6 +24,7 @@ import { migrateCritique } from './critique/persistence.js';
 import { migrateMediaTasks } from './media/tasks.js';
 import { migrateLibrary } from './library-store.js';
 import { migratePlugins } from './plugins/persistence.js';
+import { migrateStatistics } from './statistics/persistence.js';
 
 type SqliteDb = Database.Database;
 type DbRow = Record<string, any>;
@@ -349,6 +350,7 @@ function migrate(db: SqliteDb): void {
     CREATE INDEX IF NOT EXISTS idx_routine_runs_routine
       ON routine_runs(routine_id, started_at DESC);
   `);
+  migrateStatistics(db);
   // Forward-compatible column add for databases created before metadata_json.
   // SQLite has no IF NOT EXISTS for ALTER, so we check pragma_table_info.
   const cols = db.prepare(`PRAGMA table_info(projects)`).all() as DbRow[];

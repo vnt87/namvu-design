@@ -97,15 +97,6 @@ import { DesignSystemsTab } from './DesignSystemsTab';
 import { BrandsTab } from './BrandsTab';
 import { EntryNavRail, type EntryView as EntryViewKind } from './EntryNavRail';
 import { ProjectSearchModal } from './ProjectSearchModal';
-import {
-  CloudSignInTip,
-  RailAccountRecoveryTip,
-  RailAccountSyncTip,
-} from './CloudSignInTip';
-import {
-  resolveEntryRailAccountFooterState,
-  requiresAmrReauthentication,
-} from './entry-rail-account-state';
 import { LibrarySection } from './LibrarySection';
 import { UpdaterPopup } from './UpdaterPopup';
 import { WhatsNewPopup } from './WhatsNewPopup';
@@ -607,7 +598,12 @@ export function EntryShell({
   // to /design-systems lands on that section. We derive the active
   // view from the route rather than keeping it in component state.
   const route = useRoute();
-  const view: EntryViewKind = route.kind === 'home' ? route.view : 'home';
+  // The old onboarding route was a Vela/AMR sign-in surface. Runtime setup is
+  // now available from Settings, so stale links and persisted routes resolve
+  // directly to the local workspace.
+  const view: EntryViewKind = route.kind === 'home' && route.view !== 'onboarding'
+    ? route.view
+    : 'home';
   // The one shared workspace context. Any non-null context is a real workspace
   // (personal or team); workspace surfaces gate on B's permission bits, not on
   // workspaceType.
@@ -616,38 +612,7 @@ export function EntryShell({
   // unresolved or unavailable authority into an anonymous, unbound create.
   const workspaceContextState = useWorkspaceContext();
   const { context: workspaceContext, loading: workspaceLoading } = workspaceContextState;
-  const accountFooterState = resolveEntryRailAccountFooterState(
-    workspaceContextState,
-    amrLoggedIn,
-    amrSessionState,
-  );
-  const railWorkspaceContext = accountFooterState === 'sign-in'
-    ? null
-    : workspaceContext;
-  const usesOpenDesignCloud = config.mode === 'daemon' && config.agentId === 'amr';
-  const amrAuthRequired =
-    workspaceContextState.failure === 'reauth-required'
-    || (
-      usesOpenDesignCloud
-      && requiresAmrReauthentication(amrSessionState, workspaceContextState.failure)
-    );
-  useEffect(() => {
-    // The entry shell is an authenticated surface. Both an explicit signed-out
-    // status and a definitive credential rejection return to the existing
-    // Cloud identity gate. Passive reauthentication preserves the saved model
-    // source and Home's locally persisted, not-yet-sent draft.
-    const selectedCloudIdentityRejected = usesOpenDesignCloud && amrLoggedIn === false;
-    if ((!selectedCloudIdentityRejected && !amrAuthRequired) || view === 'onboarding') return;
-    navigate({ kind: 'home', view: 'onboarding' }, { replace: true });
-  }, [amrAuthRequired, amrLoggedIn, usesOpenDesignCloud, view]);
-  let accountFooterNotice: ReactNode = null;
-  if (accountFooterState === 'syncing') {
-    accountFooterNotice = <RailAccountSyncTip />;
-  } else if (accountFooterState === 'recovering') {
-    accountFooterNotice = <RailAccountRecoveryTip />;
-  } else if (accountFooterState === 'sign-in') {
-    accountFooterNotice = <CloudSignInTip />;
-  }
+  const accountFooterNotice: ReactNode = null;
   const workspaceContextRef = useRef(workspaceContext);
   workspaceContextRef.current = workspaceContext;
   const workspaceContextStateRef = useRef(workspaceContextState);
@@ -1317,11 +1282,7 @@ export function EntryShell({
   // projectKind='other', so the agent infers the task type and asks only
   // when the brief cannot be routed reliably.
   async function handlePluginLoopSubmit(payload: PluginLoopSubmit) {
-    if (amrAuthRequired) {
-      navigate({ kind: 'home', view: 'onboarding' }, { replace: true });
-      return 'blocked' as const;
-    }
-    // Open Design Cloud pre-run balance gate: hard blocks (empty wallet or
+    // NamVu Design Cloud pre-run balance gate: hard blocks (empty wallet or
     // signed out) and the soft low-balance reminder both fire BEFORE the
     // project is created, so the dialog appears right here on the home page
     // and the composer keeps its draft. In-project sends are gated separately
@@ -1492,7 +1453,7 @@ export function EntryShell({
    * Onboarding is where a signed-out user signs IN, so the workspace context
    * the shell resolved before it is stale by definition. Without this the rail
    * came back in its signed-out shape — no workspace switcher, no 草稿 / 全部项目
-   * / Workspace 设置, and the "sign in to Open Design Cloud" callout still in
+   * / Workspace 设置, and the "sign in to NamVu Design Cloud" callout still in
    * the bottom-left corner (#140) — until a focus or the 30s poll happened to
    * re-read it. `CloudSignInTip` fires the same three after its own sign-in.
    *
@@ -1537,33 +1498,6 @@ export function EntryShell({
   // the settings entry (EntryNavRail onOpenSettings), so the top strip no longer
   // carries a redundant one.
 
-
-  if (view === 'onboarding') {
-    return (
-      <div className="entry-shell entry-shell--no-header entry-shell--onboarding">
-        <main className="entry-onboarding-modal" aria-label={t('settings.welcomeTitle')}>
-          <OnboardingView
-            config={config}
-            agents={agents}
-            agentsLoading={agentsLoading}
-            providerModelsCache={activeProviderModelsCache}
-            onProviderModelsCacheChange={activeSetProviderModelsCache}
-            daemonLive={daemonLive}
-            onModeChange={onModeChange}
-            onAgentChange={onAgentChange}
-            onAgentModelChange={onAgentModelChange}
-            onApiProtocolChange={onApiProtocolChange}
-            onApiModelChange={onApiModelChange}
-            onConfigPersist={onConfigPersist}
-            onRefreshAgents={onRefreshAgents}
-            onAmrLoginStatusChange={onAmrLoginStatusChange}
-            onFinish={finishOnboarding}
-          />
-        </main>
-      </div>
-    );
-  }
-
   const homeExecutionSwitcher = (
     <InlineModelSwitcher
       compact
@@ -1602,7 +1536,7 @@ export function EntryShell({
           }}
           onOpenSearch={() => setProjectSearchOpen(true)}
           open={railOpen}
-          context={railWorkspaceContext}
+          context={workspaceContext}
           billing={workspaceBilling}
           balanceUsd={workspaceBalanceUsd}
           onOpenSettings={onOpenSettings}
@@ -2905,7 +2839,7 @@ function OnboardingView({
         // Onboarding may sit on this step for a while before finishOnboarding
         // fires refreshWorkspaceSurfacesAfterOnboarding() — without firing
         // these here too, Home's rail can render in its stale signed-out
-        // shape (still showing the "sign in to Open Design Cloud" callout)
+        // shape (still showing the "sign in to NamVu Design Cloud" callout)
         // for however long that gap lasts. Mirrors CloudSignInTip's own
         // finishSignedIn().
         notifyWorkspaceContextRefresh();
@@ -3150,7 +3084,7 @@ function OnboardingView({
 
   const primaryActionLabel = t('settings.onboardingContinue');
 
-  // Step 1 is identity only: every user signs into Open Design Cloud before
+  // Step 1 is identity only: every user signs into NamVu Design Cloud before
   // choosing Hosted, Local, or BYOK on the next screen.
   if (step === 0) {
     const cloudBusy = amrLoginPending;
@@ -3251,7 +3185,7 @@ function OnboardingView({
           <footer className="onboarding-cloud__footer">
             <LanguageMenu placement="up" align="start" />
             <span>
-              © {new Date().getFullYear()} Open Design · {t('settings.onboardingCloudRights')}
+              © {new Date().getFullYear()} NamVu Design · {t('settings.onboardingCloudRights')}
             </span>
           </footer>
         </div>
@@ -3379,7 +3313,7 @@ function OnboardingView({
           <footer className="onboarding-cloud__footer">
             <LanguageMenu placement="up" align="start" />
             <span>
-              © {new Date().getFullYear()} Open Design ·{' '}
+              © {new Date().getFullYear()} NamVu Design ·{' '}
               {t('settings.onboardingCloudRights')}
             </span>
           </footer>

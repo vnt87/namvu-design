@@ -35,7 +35,7 @@ import { processWebSourcemaps } from "./web-sourcemaps.js";
 
 const execFileAsync = promisify(execFile);
 
-const PRODUCT_NAME = "Open Design";
+const PRODUCT_NAME = "NamVu Design";
 const APP_IMAGE_PRODUCT_NAME = "Open-Design";
 const DESKTOP_LOG_ECHO_ENV = "OD_DESKTOP_LOG_ECHO";
 // The containerized build sets this to the standalone pnpm binary fetched by
@@ -218,9 +218,6 @@ export function buildDockerArgs(
     "-e",
     `${PRODUCTION_INSTALL_PNPM_BIN_ENV}=${CONTAINER_PNPM_PATH}`,
   ];
-  if (config.telemetryRelayUrl != null) {
-    dockerArgs.push("-e", `OPEN_DESIGN_TELEMETRY_RELAY_URL=${config.telemetryRelayUrl}`);
-  }
   const velaBinHost = process.env.OPEN_DESIGN_VELA_CLI_BIN?.trim();
   if (velaBinHost) {
     // The container only mounts /project, /tools-pack and cache/home dirs by
@@ -571,7 +568,7 @@ async function writeAssembledApp(
     main: "main.cjs",
     dependencies,
     description: "Local-first design product: detects your installed code-agent CLI, runs design skills + design systems, streams artifacts into a sandboxed preview.",
-    author: "Open Design Team",
+    author: "NamVu Design Team",
     repository: {
       type: "git",
       url: "https://github.com/nexu-io/open-design.git"
@@ -589,9 +586,6 @@ async function writeAssembledApp(
         appVersion: version,
         namespace: config.namespace,
         nodeCommandRelative: "open-design/bin/node",
-        ...(config.telemetryRelayUrl == null ? {} : { telemetryRelayUrl: config.telemetryRelayUrl }),
-        ...(config.posthogKey == null ? {} : { posthogKey: config.posthogKey }),
-        ...(config.posthogHost == null ? {} : { posthogHost: config.posthogHost }),
         ...(config.velaWebUrl == null ? {} : { velaWebUrl: config.velaWebUrl }),
         ...(config.portable ? {} : { namespaceBaseRoot: config.roots.runtime.namespaceBaseRoot }),
       },
@@ -664,8 +658,8 @@ async function writeLinuxBuilderConfig(config: ToolPackConfig, paths: LinuxPaths
       target,
       icon: linuxResources.icon,
       category: "Development",
-      synopsis: "Open Design",
-      maintainer: "Open Design Contributors",
+      synopsis: "NamVu Design",
+      maintainer: "NamVu Design Contributors",
     },
     // Keep the AppImage launch fallback explicit. Our top-level AppRun wrapper
     // clears ELECTRON_RUN_AS_NODE before these Chromium flags reach Electron,
@@ -1549,7 +1543,7 @@ export async function installPackedLinuxHeadless(config: ToolPackConfig): Promis
   const dataDir = dirname(config.roots.runtime.namespaceBaseRoot);
   const script = [
     "#!/bin/sh",
-    `# Open Design headless launcher — namespace: ${config.namespace}`,
+    `# NamVu Design headless launcher — namespace: ${config.namespace}`,
     `OD_PACKAGED_NAMESPACE=${JSON.stringify(config.namespace)} OD_DATA_DIR=${JSON.stringify(dataDir)} OD_RESOURCE_ROOT=${JSON.stringify(paths.resourceRoot)} exec ${JSON.stringify(nodePath)} ${JSON.stringify(entryPath)} "$@"`,
   ].join("\n") + "\n";
 

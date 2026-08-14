@@ -2,7 +2,7 @@
 //
 // This module is intentionally dependency-free (no `langfuse` SDK). It builds
 // Langfuse ingestion batches for completed runs and sends them either to the
-// official Open Design telemetry relay or, for local smoke tests, directly to
+// official NamVu Design telemetry relay or, for local smoke tests, directly to
 // Langfuse. Without OPEN_DESIGN_TELEMETRY_RELAY_URL or LANGFUSE_PUBLIC_KEY /
 // LANGFUSE_SECRET_KEY in the env, every entry point becomes a no-op so that
 // dev runs and forks of this open-source repo do not accidentally report.
@@ -278,7 +278,7 @@ export interface RuntimeInfo {
   osRelease?: string;
   /** CPU architecture (`os.arch()`, e.g. 'arm64' | 'x64'). */
   arch?: string;
-  /** Open Design app version reported by the daemon. */
+  /** NamVu Design app version reported by the daemon. */
   appVersion?: string;
   /** Build channel (development / prerelease / beta / stable). */
   appChannel?: string;
@@ -2390,6 +2390,13 @@ export async function reportRunCompleted(
   ctx: ReportContext,
   opts: ReportRunOpts = {},
 ): Promise<LangfuseDeliveryState> {
+  if (remoteTelemetryDisabled()) {
+    return {
+      langfuse_expected: false,
+      langfuse_delivery_status: 'not_expected',
+      langfuse_drop_reason: 'missing_sink_config',
+    };
+  }
   const notExpected = deriveLangfuseDeliveryState(ctx.prefs, null);
   if (ctx.prefs.metrics !== true) return notExpected;
   if (ctx.prefs.content !== true) return notExpected;
@@ -2534,6 +2541,7 @@ export async function reportRunFeedback(
   ctx: FeedbackReportContext,
   opts: ReportFeedbackOpts = {},
 ): Promise<void> {
+  if (remoteTelemetryDisabled()) return;
   if (ctx.prefs.metrics !== true) return;
   if (ctx.prefs.content !== true) return;
 
@@ -2582,4 +2590,8 @@ export async function reportRunFeedback(
     return;
   }
   await postLangfuseBatch(config, batch, fetchImpl);
+}
+
+function remoteTelemetryDisabled(): boolean {
+  return true;
 }

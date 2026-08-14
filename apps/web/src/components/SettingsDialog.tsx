@@ -61,6 +61,7 @@ import { amrProfileBadgeLabel } from '../runtime/amr-guidance';
 import { isVisibleLocalCliAgent } from '../utils/visibleAgents';
 import { ExportDiagnosticsRow } from './ExportDiagnosticsButton';
 import { Icon } from './Icon';
+import { StatisticsSection } from './StatisticsSection';
 import { defaultAgentModelId, effectiveAgentModelChoice } from './agentModelSelection';
 import {
   CUSTOM_MODEL_SENTINEL,
@@ -232,6 +233,7 @@ export type SettingsSection =
   | 'designSystems'
   | 'projectLocations'
   | 'memory'
+  | 'statistics'
   | 'privacy'
   // 'library' is consumed by the EntryShell library route — App opens it
   // via this same openSettings entry point, so SettingsSection must
@@ -878,7 +880,7 @@ function cleanAgentVersionLabel(
 }
 
 function displayAgentName(agent: Pick<AgentInfo, 'id' | 'name'>): string {
-  return agent.id === 'amr' ? 'Open Design' : agent.name;
+  return agent.id === 'amr' ? 'NamVu Design' : agent.name;
 }
 
 const AGENT_CLI_ENV_FIELDS = [
@@ -3832,7 +3834,8 @@ export function SettingsDialog({
       subtitle: t('critiqueTheater.settingsNavHint'),
     },
     notifications: { title: t('settings.notifications'), subtitle: t('settings.notificationsHint') },
-    privacy: { title: t('settings.privacy'), subtitle: t('settings.privacyHint') },
+    statistics: { title: t('settings.statistics'), subtitle: t('settings.statisticsHint') },
+    privacy: { title: t('settings.privacy'), subtitle: t('settings.statisticsDescription') },
     pet: { title: t('pet.title'), subtitle: t('pet.subtitle') },
     designSystems: {
       title: t('settings.designSystems'),
@@ -4341,13 +4344,24 @@ export function SettingsDialog({
             </button>
             <button
               type="button"
+              className={`settings-nav-item${activeSection === 'statistics' ? ' active' : ''}`}
+              onClick={() => setActiveSection('statistics')}
+            >
+              <Icon name="bar-chart-box" size={18} />
+              <span>
+                <strong>{t('settings.statistics')}</strong>
+                <small>{t('settings.statisticsHint')}</small>
+              </span>
+            </button>
+            <button
+              type="button"
               className={`settings-nav-item${activeSection === 'privacy' ? ' active' : ''}`}
               onClick={() => setActiveSection('privacy')}
             >
               <Icon name="eye" size={18} />
               <span>
                 <strong>{t('settings.privacy')}</strong>
-                <small>{t('settings.privacyHint')}</small>
+                <small>{t('settings.statisticsDescription')}</small>
               </span>
             </button>
             <button
@@ -4415,37 +4429,6 @@ export function SettingsDialog({
                 </button>
               </div>
               </div>
-              {cfg.mode === 'daemon' && !amrCardSignedIn ? (
-                // Only prompt to sign into Open Design Cloud when NOT already
-                // signed in — the AMR/vela session IS the cloud identity (one
-                // session drives both), so a logged-in user has nothing to do
-                // here and the callout was showing spuriously.
-                <div className="settings-cloud-signin-callout">
-                  <div>
-                    <strong>{t('settings.cloudCalloutTitle')}</strong>
-                    <p>{t('settings.cloudCalloutBody')}</p>
-                  </div>
-                  {/* Same device-auth flow as the 授权 button on the Open Design
-                      agent card below — the AMR/vela session IS the cloud
-                      identity, so signing in here is that one flow. This used to
-                      navigate to onboarding, which walked the user through the
-                      whole first-run tour to reach the same authorization. */}
-                  <AmrLoginPill
-                    className="settings-cloud-signin-callout__button"
-                    hideSignedOutStatus
-                    hideSignedInStatus
-                    initialStatus={amrCardStatus}
-                    skipInitialRefresh
-                    signInLabel={t('settings.cloudCalloutButton')}
-                    signInIcon="log-in"
-                    amrEntrySourceDetail="settings_cloud_callout"
-                    metricsConsent={cfg.telemetry?.metrics === true}
-                    installationId={cfg.installationId}
-                    onStatusChange={setAmrCardStatus}
-                    onSignedOut={onAmrSignedOut}
-                  />
-                </div>
-              ) : null}
               {cfg.mode === 'api' ? (
                 <div
                   className="protocol-chips protocol-chips--providers"
@@ -5942,9 +5925,9 @@ export function SettingsDialog({
             />
           ) : null}
 
-          {activeSection === 'privacy' ? (
-            <PrivacySection cfg={cfg} setCfg={setCfg} />
-          ) : null}
+          {activeSection === 'privacy' ? <PrivacySection /> : null}
+
+          {activeSection === 'statistics' ? <StatisticsSection /> : null}
 
           {activeSection === 'about' ? (
             <section className="settings-section">
@@ -8058,7 +8041,7 @@ function MediaProvidersSection({
 // Important: every snippet uses absolute paths to the daemon's current
 // Node-compatible runtime and built cli.js, fetched at runtime. macOS
 // and Linux ship a system /usr/bin/od (octal-dump) that shadows any
-// `od` we might add to PATH, and most Open Design users run from
+// `od` we might add to PATH, and most NamVu Design users run from
 // source where `od` is not installed globally. The installer panel
 // must NOT reference bare `od`.
 type McpClientId =

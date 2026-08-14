@@ -2,10 +2,10 @@
  * Data model for the curated "Codex design" collection under
  * `/plugins/codex-design/`.
  *
- * Unlike the rest of `/plugins/*`, these are NOT Open Design bundled
+ * Unlike the rest of `/plugins/*`, these are NOT NamVu Design bundled
  * plugins — they are real, external, verified skills and resources for
  * doing design work with OpenAI Codex (openai/skills, MengTo/Skills,
- * etc.). The collection positions Open Design as the home for designing
+ * etc.). The collection positions NamVu Design as the home for designing
  * with Codex and drives to the client download + the curated
  * `codex-design` list.
  *
@@ -111,7 +111,7 @@ export interface CodexCollection {
 export const CODEX_COLLECTION: CodexCollection = {
   eyebrow: 'Codex design',
   heading: 'The design plugins that make Codex ship real UI',
-  lede: 'OpenAI Codex writes working code. Left alone it defaults to safe fonts, average spacing, and centered Helvetica. These are the plugins that give it taste: aesthetic skills and design-system rules. Install one, or run all of them inside Open Design.',
+  lede: 'OpenAI Codex writes working code. Left alone it defaults to safe fonts, average spacing, and centered Helvetica. These are the plugins that give it taste: aesthetic skills and design-system rules. Install one, or run all of them inside NamVu Design.',
   stats: [
     { value: '50', label: 'curated plugins' },
     { value: '13', label: 'source repos' },

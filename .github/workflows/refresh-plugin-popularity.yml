@@ -50,7 +50,6 @@ jobs:
         # stays green and opens no PR.
         env:
           POSTHOG_PERSONAL_API_KEY: ${{ secrets.POSTHOG_PERSONAL_API_KEY }}
-          POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
         run: pnpm exec tsx scripts/refresh-plugin-popularity.ts --write --window=${{ github.event.inputs.window || '28' }}
 
       - name: Generate Open Design bot token

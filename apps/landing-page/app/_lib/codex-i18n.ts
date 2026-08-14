@@ -101,15 +101,15 @@ const en: CodexCopy = {
   collectionStats: CODEX_COLLECTION.stats,
   collectionIntro: CODEX_COLLECTION.intro,
   collectionCategoryBlurbs: CODEX_COLLECTION.categories.map((c) => c.blurb),
-  collectionCloserHeading: 'Skip the setup. Design with Codex inside Open Design',
+  collectionCloserHeading: 'Skip the setup. Design with Codex inside NamVu Design',
   filterAll: 'All',
   collectionCloserBody:
-    'Open Design is the open-source, agent-native design workspace that runs around Codex. It keeps your systems, skills and templates consistent, so the agent ships work you own.',
+    'NamVu Design is the open-source, agent-native design workspace that runs around Codex. It keeps your systems, skills and templates consistent, so the agent ships work you own.',
 
   categoryFrontend: 'Frontend & UI',
   categoryDesignSystems: 'Design Systems',
 
-  ctaDownload: 'Download Open Design',
+  ctaDownload: 'Download NamVu Design',
   ctaStarList: 'Star the list',
   ctaBrowseAll: 'Browse all plugins',
   ctaViewSource: 'View source',
@@ -147,9 +147,9 @@ const en: CodexCopy = {
   detailMoreOnList: 'More on the codex-design list',
   detailRelated: 'More Codex design plugins',
   finalEyebrow: 'Next step',
-  detailCloserHeading: 'Design with Open Design, without the setup',
+  detailCloserHeading: 'Design with NamVu Design, without the setup',
   detailCloserBody:
-    'Install this plugin yourself, or run a whole curated design layer around Codex with Open Design. Bring your own key, own your output.',
+    'Install this plugin yourself, or run a whole curated design layer around Codex with NamVu Design. Bring your own key, own your output.',
 
   skills: Object.fromEntries(
     CODEX_SKILLS.map((s) => [
