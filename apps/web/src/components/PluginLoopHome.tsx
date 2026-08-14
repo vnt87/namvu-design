@@ -81,9 +81,7 @@ function pluginLoopLocalLabel(
   locale: string,
   key: 'pluginActive' | 'reloadExampleQuery',
 ): string {
-  if (locale === 'zh-CN') {
-    return key === 'pluginActive' ? '插件已启用' : '重新加载示例请求';
-  }
+  void locale;
   return key === 'pluginActive' ? 'Plugin active' : 'Reload example query';
 }
 

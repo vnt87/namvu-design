@@ -4170,7 +4170,7 @@ function fallbackPluginPresetPrompt(
   return `Create ${englishArticle(artifact)} ${artifact} with the "${title}" preset${description ? `: ${description}` : '.'}`;
 }
 
-const HOME_PROMPT_EXAMPLES: Record<Locale, Record<string, string[]>> = {
+const HOME_PROMPT_EXAMPLES: Partial<Record<Locale, Record<string, string[]>>> = {
   "en": {
     "web-clone": [
       "Website URL to clone: https://open-design.ai",
@@ -4932,7 +4932,7 @@ export const HOME_PROMPT_EXAMPLE_CHIP_IDS = [
 // missing locale entry would silently bleed English into the home composer,
 // which is the regression this table exists to prevent.
 export function homeHeroChipPromptExamplesForLocale(chipId: string, locale: Locale): string[] {
-  return HOME_PROMPT_EXAMPLES[locale]?.[chipId] ?? HOME_PROMPT_EXAMPLES.en[chipId] ?? [];
+  return HOME_PROMPT_EXAMPLES[locale]?.[chipId] ?? HOME_PROMPT_EXAMPLES.en?.[chipId] ?? [];
 }
 
 function homeHeroChipPromptExamples(chipId: string, locale: Locale): string[] {

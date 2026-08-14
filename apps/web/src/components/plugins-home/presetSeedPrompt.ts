@@ -25,11 +25,12 @@ const HOME_ESCAPED_ARGUMENT_PLACEHOLDER_PATTERN =
 const HOME_ARGUMENT_PLACEHOLDER_PATTERN =
   /\{argument\s+name=(?:"([^"]+)"|'([^']+)')\s+default=(?:"([^"]*)"|'([^']*)')[^}]*\}/g;
 
-export type PromptLocaleKind = 'zh' | 'ja' | 'en';
+export type PromptLocaleKind = 'zh' | 'ja' | 'vi' | 'en';
 
 export function promptLocaleKind(locale: Locale): PromptLocaleKind {
   if (locale === 'zh-CN' || locale === 'zh-TW') return 'zh';
   if (locale === 'ja') return 'ja';
+  if (locale === 'vi') return 'vi';
   return 'en';
 }
 

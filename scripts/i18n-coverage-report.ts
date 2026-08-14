@@ -119,7 +119,7 @@ function formatTable(results: LocaleCoverage[], englishTotal: number): string {
   const header = `Locale (key total = ${englishTotal} on en)`;
   const lines: string[] = [header, "-".repeat(header.length)];
   for (const r of results) {
-    const label = LOCALE_LABEL[r.locale];
+    const label = LOCALE_LABEL[r.locale] ?? r.locale;
     const missingPct = r.locale === "en"
       ? "—"
       : `${((r.total / englishTotal) * 100).toFixed(0)}%`;

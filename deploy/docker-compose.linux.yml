@@ -34,14 +34,33 @@ services:
       OD_BIND_HOST: 127.0.0.1
       # Prepend host-bin mounts so the daemon finds agent CLIs before
       # any container-local stubs.
-      PATH: /mnt/host-local-bin:/mnt/host-opencode:/usr/local/bin:/usr/bin:/bin
+      # Include the original OpenCode bin path as well as the neutral mount:
+      # version-manager/Homebrew launchers can contain relative symlinks whose
+      # targets only resolve from their original directory.
+      PATH: /mnt/host-local-bin:/mnt/host-opencode:${OPEN_DESIGN_OPENCODE_BIN_DIR:-${HOME}/.opencode/bin}:/usr/local/bin:/usr/bin:/bin
+      # Codex uses this home for auth, config, and its standalone package.
+      # The host .local/bin/codex launcher is commonly a symlink into this
+      # directory, so the source is also mounted at its original absolute
+      # path below.
+      CODEX_HOME: /home/open-design/.codex
       # API keys for agent CLIs. Leave blank to omit.
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
       - ${HOME}/.local/bin:/mnt/host-local-bin:ro
-      - ${HOME}/.opencode/bin:/mnt/host-opencode:ro
+      # Override OPEN_DESIGN_OPENCODE_BIN_DIR for Homebrew or another install,
+      # e.g. /home/linuxbrew/.linuxbrew/bin.
+      - ${OPEN_DESIGN_OPENCODE_BIN_DIR:-${HOME}/.opencode/bin}:/mnt/host-opencode:ro
+      # Preserve symlink targets for installs such as Linuxbrew's
+      # /home/linuxbrew/.linuxbrew/bin/opencode -> ../Cellar/.... Set this to
+      # the parent containing the selected bin directory when needed.
+      - ${OPEN_DESIGN_OPENCODE_ROOT_DIR:-${HOME}/.opencode}:${OPEN_DESIGN_OPENCODE_ROOT_DIR:-${HOME}/.opencode}:ro
+      # Codex's launcher often resolves to ${HOME}/.codex/packages/... . Keep
+      # the original absolute mount for that symlink and expose the same data
+      # under the container user's home for auth/config lookup.
+      - ${HOME}/.codex:${HOME}/.codex:ro
+      - ${HOME}/.codex:/home/open-design/.codex:ro
       # Claude Code versioned binaries — mounted at the same absolute path as the host
       # so the ~/.local/bin/claude symlink resolves correctly inside the container.
       - ${HOME}/.local/share/claude:${HOME}/.local/share/claude:ro

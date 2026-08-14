@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SkillsSection } from '../../src/components/SkillsSection';
 import { I18nProvider } from '../../src/i18n';
 import { en } from '../../src/i18n/locales/en';
-import { zhCN } from '../../src/i18n/locales/zh-CN';
+import { vi as viDict } from '../../src/i18n/locales/vi';
 import type { AppConfig } from '../../src/types';
 import type { SkillSummary } from '@open-design/contracts';
 
@@ -45,7 +45,7 @@ function makeSkill(overrides: Partial<SkillSummary>): SkillSummary {
 function renderSkillsSection(
   skills: SkillSummary[],
   options?: {
-    locale?: 'en' | 'zh-CN';
+    locale?: 'en' | 'vi';
     onSkillsRefresh?: () => void | Promise<void>;
     onSkillsChanged?: (id?: string) => void;
     filesById?: Record<string, Array<{ path: string; kind: 'file' | 'directory'; size: number | null }>>;
@@ -246,7 +246,7 @@ describe('SkillsSection', () => {
   // key) goes red.
   describe.each([
     { locale: 'en' as const, dict: en },
-    { locale: 'zh-CN' as const, dict: zhCN },
+    { locale: 'vi' as const, dict: viDict },
   ])('built-in skill override wording ($locale)', ({ locale, dict }) => {
     it('frames the edit affordance, confirmation, form, and submit as a user override', async () => {
       renderSkillsSection(
@@ -351,7 +351,7 @@ describe('SkillsSection', () => {
           source: 'built-in',
         }),
       ],
-      { locale: 'zh-CN' },
+      { locale: 'vi' },
     );
 
     expect(await screen.findByText('本地化技能')).toBeTruthy();

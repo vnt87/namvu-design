@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { workspaceInviteErrorMessageKey } from '../src/collab/invite-error-copy';
 import { en } from '../src/i18n/locales/en';
-import { zhCN } from '../src/i18n/locales/zh-CN';
+import { vi } from '../src/i18n/locales/vi';
 
 // Red-spec for the V0.19.1 acceptance bug (record recvrovm9Bcyy0): inviting an
 // address that is ALREADY an active member of the workspace showed the generic
@@ -36,7 +36,7 @@ describe('workspaceInviteErrorMessageKey', () => {
     const member = workspaceInviteErrorMessageKey('invite_existing_member');
     const pending = workspaceInviteErrorMessageKey('invite_duplicate');
     expect(member).not.toBe(pending);
-    for (const dict of [en, zhCN]) {
+    for (const dict of [en, vi]) {
       expect(dict[member]).not.toBe(dict[pending]);
       // Neither reason may reuse the retry-later sentence — retrying cannot
       // resolve either conflict.

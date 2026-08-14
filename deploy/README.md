@@ -125,6 +125,25 @@ Common install paths:
 | opencode | `~/.opencode/bin/opencode` |
 | Codex | `~/.local/bin/codex` |
 
+Codex's launcher is often a symlink into `~/.codex`; the Linux override mounts
+that directory and sets `CODEX_HOME` so both the executable and login state are
+available inside the container. OpenCode installed through Linuxbrew needs its
+bin directory supplied explicitly:
+
+```bash
+OPEN_DESIGN_OPENCODE_BIN_DIR=/home/linuxbrew/.linuxbrew/bin \
+OPEN_DESIGN_OPENCODE_ROOT_DIR=/home/linuxbrew/.linuxbrew \
+  docker compose -f docker-compose.yml -f docker-compose.linux.yml up -d --no-build
+```
+
+`OPEN_DESIGN_OPENCODE_ROOT_DIR` keeps versioned symlink targets (such as
+Linuxbrew's `Cellar`) visible. For a regular `~/.opencode/bin` installation,
+the defaults are sufficient.
+
+The override mounts host CLI credentials read-only. It does not copy or expose
+host CLIs to a remote/cloud deployment; use a local daemon install there if the
+agent must remain on the host.
+
 The daemon auto-detects any CLI that is visible in `PATH` at startup — no extra
 configuration needed. For a CLI installed in a non-standard path, add a volume
 and prepend its directory to `PATH` in `docker-compose.linux.yml`, then restart:
